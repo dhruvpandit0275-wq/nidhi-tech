@@ -1,0 +1,204 @@
+/* Nidhi Tech Mailer - Premium Dashboard Style */
+
+/* 1. बेस सेटिंग्स और रीसेट */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #f4f6f9;
+    color: #333333;
+    line-height: 1.6;
+    padding: 30px 15px;
+}
+
+.container {
+    max-width: 1140px;
+    margin: 0 auto;
+}
+
+/* 2. हेडर सेक्शन डिजाइन */
+.header {
+    background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+    color: #ffffff;
+    padding: 25px 30px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 86, 179, 0.15);
+}
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.header small {
+    color: #cbdcf7;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+}
+
+/* 3. ग्रिड लेआउट (दो मुख्य कार्ड्स के लिए) */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 25px;
+}
+
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 4. प्रीमियम कार्ड्स डिजाइन */
+.card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border-top: 4px solid #0056b3;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+h2 {
+    margin-top: 0;
+    color: #0056b3;
+    border-bottom: 2px solid #f0f2f5;
+    padding-bottom: 12px;
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+/* 5. लाइव स्टेटस बैज (Badges) */
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ffffff;
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bg-success {
+    background-color: #28a745;
+    box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);
+}
+
+.bg-danger {
+    background-color: #dc3545;
+    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.2);
+}
+
+.bg-warning {
+    background-color: #ffc107;
+    color: #212529;
+    box-shadow: 0 2px 6px rgba(255, 193, 7, 0.2);
+}
+
+/* 6. कड़क बटन सेटिंग्स */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    color: #ffffff;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.btn-toggle {
+    background-color: #6c757d;
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.15);
+}
+
+.btn-toggle:hover {
+    background-color: #495057;
+    transform: translateY(-1px);
+}
+
+.btn-toggle:active {
+    transform: translateY(0);
+}
+
+/* 7. डायनेमिक एरर बॉक्स */
+.error-box {
+    background: #fff3cd;
+    border-left: 5px solid #ffc107;
+    padding: 18px;
+    margin-top: 15px;
+    border-radius: 6px;
+    line-height: 1.6;
+    font-size: 14px;
+    color: #664d03;
+}
+
+.error-box strong {
+    color: #212529;
+}
+
+/* 8. रीयल-टाइम एक्टिविटी लॉग टेबल */
+.log-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 13.5px;
+}
+
+.log-table th {
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 600;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.log-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eeeeee;
+    vertical-align: top;
+    color: #495057;
+}
+
+.log-table tr:hover {
+    background-color: #f9fbfd;
+}
+
+/* स्क्रोलबार कस्टमाइजेशन ताकि लॉग विंडो प्रीमियम लगे */
+div::-webkit-scrollbar {
+    width: 6px;
+}
+
+div::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+div::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 10px;
+}
+
+div::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
