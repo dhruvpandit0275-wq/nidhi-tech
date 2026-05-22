@@ -14,9 +14,8 @@ CORS(app)
 # ==========================================
 # 1. लॉन्च-रेडी कॉन्फ़िगरेशन
 # ==========================================
-SMTP_EMAIL = "contactsapnaportals@gmail.com"  
-SMTP_PASSWORD = "hbwiyredkggkepgx"        
-
+SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "contactsapnaportals@gmail.com")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "hbwiyredkggkepgx")
 api_keys_status = {
     "651474860309": {"active": True, "name": "Primary Key (6514)"},
     "BKHPH3305P": {"active": True, "name": "Secondary Key (BKHPH)"}
