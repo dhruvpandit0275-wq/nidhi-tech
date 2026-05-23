@@ -235,43 +235,22 @@
         }
 
         // एडमिन के लिए ईमेल पर OTP भेजने की बैकएंड प्रोसेस कॉल
-        function sendAdminOTP() {
-            const emailInput = document.getElementById("admin-email").value.trim().toLowerCase();
-            
-            if(emailInput !== targetAdmin.toLowerCase()) {
-                alert("[🔐 Good Attempt Alert] Entry Rejected! This is not an authorized administrator email address.");
-                return;
-            }
-            
-            // ओटीपी भेजते ही रिफ्रेश रोकें और डेटा सेव करें ताकि दूसरे टैब पर जाने से कुछ न बदले
-            freezeAutomaticRefresh();
-            sessionStorage.setItem("adminBoxOpen", "true");
-            sessionStorage.setItem("adminEmailProgress", emailInput);
-            
-            generatedAdminOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            startAdminResendTimer();
-            
-            // Asynchronously dispatching generated OTP via the mailer API engine
-            fetch('/sendotp', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    email: emailInput, 
-                    api_key: "651474860309",
-                    action: "Admin Panel Login Verification"
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert("[🔑 System Security]: Security OTP has been successfully transmitted directly to your registered Admin email.");
-                document.getElementById("admin-otp-group").style.display = "block";
-            })
-            .catch(err => {
-                alert("[⚠️ Mailer Error]: Failed to dispatch security OTP via server mailer endpoint. Please check local server connectivity.");
-                document.getElementById("admin-otp-group").style.display = "block";
-            });
+       function triggerAdminOTP() {
+    fetch('/admin/send_otp', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ admin_key: "202121" })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if(data.status === "success") {
+            alert("ओटीपी भेज दिया गया है, कृपया अपनी ईमेल dhruvpandit027@gmail.com चेक करें।");
+        } else {
+            alert("Error: " + data.message);
         }
-
+    })
+    .catch(error => console.error('Error:', error));
+}
         // एडमिन लॉगिन सत्यापन
         function verifyAdminLogin() {
             const otpInput = document.getElementById("admin-otp").value.trim();
