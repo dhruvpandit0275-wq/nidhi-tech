@@ -185,6 +185,29 @@ def verify_otp():
 # ==========================================
 # 6. ADMIN & FEEDBACK SYSTEM
 # ==========================================
+
+@app.route('/admin/send_otp', methods=['POST'])
+def admin_send_otp():
+    data = request.json or {}
+    admin_key = data.get("admin_key")
+    # आपने दी हुई ईमेल आईडी यहाँ सेट की गई है
+    email = "dhruvpandit027@gmail.com" 
+
+    if admin_key == "202121":
+        otp = str(random.randint(100000, 999999))
+        otp_store[email] = {"otp": otp, "expires_at": time.time() + 300}
+        
+        # एडमिन के लिए ओटीपी भेजें
+        success = send_premium_mail(email, otp, "Admin Login")
+        
+        if success:
+            log_event("SUCCESS", f"Admin OTP sent to {email}")
+            return jsonify({"status": "success", "message": "Admin OTP sent successfully"})
+        return jsonify({"status": "error", "message": "Failed to send email"}), 500
+    
+    return jsonify({"status": "error", "message": "Invalid Admin Key"}), 403
+
+
 @app.route('/feedback', methods=['POST'])
 def feedback():
     data = request.json or {}
