@@ -76,11 +76,10 @@ def log_event(status, message, error_type=None, solution=None):
     terminal_log(status, message)
 
 # ==========================================
-# 4. मेलर इंजन (Fixed with Async Threading)
+# 4. मेलर इंजन (Fixed with Async Threading & High Timeout)
 # ==========================================
 def send_premium_mail(target_email, otp, action_name):
     try:
-        # ईमेल भेजने का समय और दिनांक
         current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         
         msg = MIMEMultipart('alternative')
@@ -88,7 +87,6 @@ def send_premium_mail(target_email, otp, action_name):
         msg['From'] = f"Nidhi Tech ( Sapna Portals ) <{SMTP_EMAIL}>"
         msg['To'] = target_email
         
-        # Professional HTML Template
         html_content = f"""
         <html>
         <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f6f9fc; padding: 30px;">
@@ -116,11 +114,11 @@ def send_premium_mail(target_email, otp, action_name):
         """
         msg.attach(MIMEText(html_content, 'html'))
         
-        # Brevo SMTP Settings (जो हमने Render में सेट की हैं)
         smtp_server = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com")
         smtp_port = int(os.environ.get("SMTP_PORT", 587))
+        smtp_timeout = int(os.environ.get("SMTP_TIMEOUT", 60))
         
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=20)
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=smtp_timeout)
         server.starttls()
         server.login(SMTP_EMAIL, SMTP_PASSWORD)
         server.sendmail(SMTP_EMAIL, target_email, msg.as_string())
@@ -150,7 +148,6 @@ def send_otp():
             otp = str(random.randint(100000, 999999))
             otp_store[email] = {"otp": otp, "expires_at": time.time() + 300}
             
-            # Threading का उपयोग ताकि रिस्पॉन्स फास्ट मिले
             thread = threading.Thread(target=send_premium_mail, args=(email, otp, action))
             thread.start()
             
