@@ -80,14 +80,47 @@ def log_event(status, message, error_type=None, solution=None):
 # ==========================================
 def send_premium_mail(target_email, otp, action_name):
     try:
+        # ईमेल भेजने का समय और दिनांक
+        current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        
         msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"🔒 Security Alert: Your {action_name} Verification Code"
+        msg['Subject'] = f"🔒 Security Alert: {action_name} Verification"
         msg['From'] = f"Nidhi Tech ( Sapna Portals ) <{SMTP_EMAIL}>"
         msg['To'] = target_email
-        html_content = f"<html><body><h1 style='color:blue;'>OTP: {otp}</h1><p>Valid for 5 mins.</p></body></html>"
+        
+        # Professional HTML Template
+        html_content = f"""
+        <html>
+        <body style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f6f9fc; padding: 30px;">
+            <div style="max-width: 550px; background-color: #ffffff; margin: auto; border-top: 4px solid #2980b9; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); padding: 25px;">
+                <h2 style="color: #2c3e50; text-align: center;">Nidhi Tech - Verification Service</h2>
+                <p>Hello User,</p>
+                <p>We received a request for <strong>{action_name}</strong> on our portal. If this was you, please use the OTP below to proceed.</p>
+                
+                <div style="text-align: center; margin: 30px 0; background: #ebf5fb; padding: 15px; border-radius: 6px;">
+                    <span style="font-size: 36px; font-weight: bold; color: #2980b9; letter-spacing: 8px;">{otp}</span>
+                </div>
+                
+                <p style="font-size: 14px; color: #555;"><strong>Requested Time:</strong> {current_time}</p>
+                <p style="font-size: 14px; color: #555;"><strong>Service Name:</strong> {action_name}</p>
+                
+                <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; font-size: 13px; color: #856404;">
+                    <strong>⚠️ Security Warning:</strong> This code is valid for 5 minutes only. Do not share this OTP with anyone, including Nidhi Tech support. If you did not initiate this request, please ignore this email.
+                </div>
+                
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 25px 0;">
+                <p style="text-align: center; font-size: 12px; color: #999;">&copy; {datetime.now().year} Nidhi Tech presented by Sapna Portals. All rights reserved.</p>
+            </div>
+        </body>
+        </html>
+        """
         msg.attach(MIMEText(html_content, 'html'))
         
-        server = smtplib.SMTP('smtp.gmail.com', 587, timeout=20)
+        # Brevo SMTP Settings (जो हमने Render में सेट की हैं)
+        smtp_server = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com")
+        smtp_port = int(os.environ.get("SMTP_PORT", 587))
+        
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=20)
         server.starttls()
         server.login(SMTP_EMAIL, SMTP_PASSWORD)
         server.sendmail(SMTP_EMAIL, target_email, msg.as_string())
