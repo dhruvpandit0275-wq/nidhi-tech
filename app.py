@@ -76,16 +76,19 @@ def log_event(status, message, error_type=None, solution=None):
     terminal_log(status, message)
 
 # ==========================================
-# 4. मेलर इंजन (Fixed with Async Threading & High Timeout)
+# 4. मेलर इंजन (Fixed with API Integration)
 # ==========================================
 def send_premium_mail(target_email, otp, action_name):
     try:
-        current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        api_url = "https://api.brevo.com/v3/smtp/email"
+        api_key = os.environ.get("BREVO_API_KEY")
         
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = f"🔒 Security Alert: {action_name} Verification"
-        msg['From'] = f"Nidhi Tech ( Sapna Portals ) <{SMTP_EMAIL}>"
-        msg['To'] = target_email
+        headers = {
+            "api-key": api_key,
+            "Content-Type": "application/json"
+        }
+        
+        current_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         
         html_content = f"""
         <html>
@@ -112,18 +115,22 @@ def send_premium_mail(target_email, otp, action_name):
         </body>
         </html>
         """
-        msg.attach(MIMEText(html_content, 'html'))
         
-        smtp_server = os.environ.get("SMTP_SERVER", "smtp-relay.brevo.com")
-        smtp_port = int(os.environ.get("SMTP_PORT", 587))
-        smtp_timeout = int(os.environ.get("SMTP_TIMEOUT", 60))
+        payload = {
+            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech"},
+            "to": [{"email": target_email}],
+            "subject": f"Security Alert: {action_name} Verification",
+            "htmlContent": html_content
+        }
         
-        server = smtplib.SMTP(smtp_server, smtp_port, timeout=smtp_timeout)
-        server.starttls()
-        server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.sendmail(SMTP_EMAIL, target_email, msg.as_string())
-        server.quit()
-        return True
+        response = requests.post(api_url, json=payload, headers=headers, timeout=15)
+        
+        if response.status_code in [200, 201]:
+            return True
+        else:
+            print(f"API Error: {response.text}")
+            return False
+            
     except Exception as e:
         print(f"CRITICAL ERROR: Failed to send mail. Reason: {str(e)}")
         return False
