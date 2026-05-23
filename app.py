@@ -143,7 +143,8 @@ def send_otp():
     data = request.json or {}
     email = data.get("email", "").strip().lower()
     api_key = data.get("api_key")
-    action = data.get("action", "Verification")
+    # यहाँ action को डायनामिक रखा गया है, डिफ़ॉल्ट 'Verification' रहेगा
+    action = data.get("action", "Verification").capitalize() 
 
     if not email:
         return jsonify({"status": "error", "message": "Email is required"}), 400
@@ -155,13 +156,16 @@ def send_otp():
             otp = str(random.randint(100000, 999999))
             otp_store[email] = {"otp": otp, "expires_at": time.time() + 300}
             
-            thread = threading.Thread(target=send_premium_mail, args=(email, otp, action))
-            thread.start()
+            # बिना थ्रेड के कॉल करें ताकि ईमेल पक्का जाए
+            success = send_premium_mail(email, otp, action)
             
-            log_event("SUCCESS", f"OTP Process started for {email}")
-            return jsonify({"status": "success", "message": "OTP sent successfully"}), 200
+            if success:
+                log_event("SUCCESS", f"{action} OTP sent to {email}")
+                return jsonify({"status": "success", "message": f"{action} OTP sent successfully"}), 200
+            else:
+                return jsonify({"status": "error", "message": "Failed to send email"}), 500
         else:
-            return jsonify({"status": "error", "message": "API Key usage limit reached (100/100)"}), 429
+            return jsonify({"status": "error", "message": "API Key usage limit reached"}), 429
             
     return jsonify({"status": "error", "message": "Invalid API Key"}), 403
 
@@ -170,10 +174,11 @@ def verify_otp():
     data = request.get_json() or {}
     email = data.get('email', '').strip().lower()
     otp = str(data.get('otp', '')).strip()
+    action = data.get('action', 'Verification').capitalize()
     
     if verify_against_storage(email, otp):
-        log_event("SUCCESS", f"Verification Success for: {email}")
-        return jsonify({"status": "success", "message": "Verified"}), 200
+        log_event("SUCCESS", f"{action} Verification Success for: {email}")
+        return jsonify({"status": "success", "message": "Verified successfully"}), 200
     else:
         return jsonify({"status": "error", "message": "Invalid or Expired OTP"}), 400
 
@@ -191,17 +196,24 @@ def feedback():
         server_logs.insert(0, {"type": "feedback", "email": email, "msg": message, "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
         log_event("SUCCESS", f"Feedback received from {email}")
         return jsonify({"status": "success", "message": "Feedback submitted successfully"})
+    
     return jsonify({"status": "error", "message": "Invalid OTP. Feedback rejected."}), 400
 
 @app.route('/admin/reply', methods=['POST'])
 def admin_reply():
-    data = request.json
+    data = request.json or {}
     if data.get("admin_key") == "202121":
         user_email = data.get("email")
         reply_msg = data.get("reply")
-        thread = threading.Thread(target=send_premium_mail, args=(user_email, reply_msg, "Admin Support Reply"))
-        thread.start()
-        return jsonify({"status": "success"})
+        
+        # यहाँ भी थ्रेड हटा दिया गया है ताकि ईमेल जाने तक रिस्पॉन्स रुके रहे
+        success = send_premium_mail(user_email, reply_msg, "Admin Support Reply")
+        
+        if success:
+            return jsonify({"status": "success", "message": "Reply sent to user"})
+        else:
+            return jsonify({"status": "error", "message": "Failed to send email"}), 500
+            
     return jsonify({"error": "Unauthorized"}), 403
 
 @app.route('/health-check', methods=['GET'])
