@@ -117,7 +117,7 @@ def send_premium_mail(target_email, otp, action_name):
         """
         
         payload = {
-            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech"},
+            "sender": {"email": "contactsapnaportals@11287780.brevosend.com", "name": "Nidhi Tech"},
             "to": [{"email": target_email}],
             "subject": f"Security Alert: {action_name} Verification",
             "htmlContent": html_content
