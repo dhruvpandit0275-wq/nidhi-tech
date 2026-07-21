@@ -88,8 +88,10 @@ def send_premium_mail(target_email, otp, action_name):
             "Content-Type": "application/json"
         }
         
-      current_time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
-    user_name = target_email.split('@')[0].replace('.', ' ').title()
+        current_time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
+        
+        user_name = target_email.split('@')[0].replace('.', ' ').title()
+        
         html_content = f"""
         <html>
         <head>
@@ -148,10 +150,9 @@ def send_premium_mail(target_email, otp, action_name):
         </body>
         </html>
         """
-       
         
         payload = {
-            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech"},
+            "sender": {"email": "contactsapnaportals@11287780.brevosend.com", "name": "Nidhi Tech"},
             "to": [{"email": target_email}],
             "subject": f"Security Alert: {action_name} Verification",
             "htmlContent": html_content
@@ -168,7 +169,6 @@ def send_premium_mail(target_email, otp, action_name):
     except Exception as e:
         print(f"CRITICAL ERROR: Failed to send mail. Reason: {str(e)}")
         return False
-
 # ==========================================
 # 5. API एंडपॉइंट्स
 # ==========================================
