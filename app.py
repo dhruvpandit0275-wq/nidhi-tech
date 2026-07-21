@@ -92,7 +92,7 @@ def send_premium_mail(target_email, otp, action_name):
         ist_now = datetime.now() + timedelta(hours=5, minutes=30)
         current_time = ist_now.strftime("%d-%m-%Y %I:%M %p")
         
-        user_name = target_email.split('@')[0].replace('.', ' ').title()
+       <p style="font-size: 16px; margin-top: 0;">Hello <strong>{user_name}</strong>,</p>
         
         html_content = f"""
         <html>
