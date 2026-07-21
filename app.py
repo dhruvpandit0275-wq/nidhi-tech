@@ -116,8 +116,8 @@ def send_premium_mail(target_email, otp, action_name):
                 <table class="email-content" width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td class="email-header">
-                            <h1>Nidhi Tech</h1>
-                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7;">Apna Print Portal Verification Service</p>
+                            <h1>Apna Nidhi Tech</h1>
+                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7;">Apna Nidhi Tech Verification Service</p>
                         </td>
                     </tr>
                     <tr>
@@ -142,7 +142,7 @@ def send_premium_mail(target_email, otp, action_name):
                     </tr>
                     <tr>
                         <td class="email-footer">
-                            <p style="margin: 0;">&copy; {datetime.now().year}Apna Nidhi Tech. All rights reserved.</p>
+                            <p style="margin: 0;">&copy; {datetime.now().year} Apna Nidhi Tech. All rights reserved.</p>
                         </td>
                     </tr>
                 </table>
