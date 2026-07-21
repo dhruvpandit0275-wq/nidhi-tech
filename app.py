@@ -92,70 +92,61 @@ def send_premium_mail(target_email, otp, action_name):
         ist_now = datetime.now() + timedelta(hours=5, minutes=30)
         current_time = ist_now.strftime("%d-%m-%Y %I:%M %p")
         
-       <p style="font-size: 16px; margin-top: 0;">Hello <strong>{user_name}</strong>,</p>
+        user_name = target_email.split('@')[0].replace('.', ' ').title()
         
-        html_content = f"""
-        <html>
-        <head>
-          <meta charset="UTF-8">
-            <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 0; }}
-                .email-wrapper {{ width: 100%; table-layout: fixed; background-color: #eef2f7; padding: 40px 0; }}
-                .email-content {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); overflow: hidden; border-top: 5px solid #1abc9c; }}
-                .email-header {{ background: linear-gradient(135deg, #2c3e50, #1a252f); padding: 30px; text-align: center; color: #ffffff; }}
-                .email-header h1 {{ margin: 0; font-size: 24px; letter-spacing: 1px; color: #ffffff; }}
-                .email-body {{ padding: 35px 30px; color: #333333; line-height: 1.6; }}
-                .otp-box {{ text-align: center; margin: 30px 0; background: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 8px; }}
-                .otp-code {{ font-size: 38px; font-weight: 800; color: #16a085; letter-spacing: 10px; }}
-                .info-box {{ background-color: #f8f9fa; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; font-size: 14px; color: #555555; border-radius: 4px; }}
-                .warning-box {{ background-color: #fef9e7; border-left: 4px solid #f1c40f; padding: 15px; margin: 20px 0; font-size: 13px; color: #7d6608; border-radius: 4px; }}
-                .email-footer {{ background-color: #f4f6f7; padding: 20px 30px; text-align: center; font-size: 12px; color: #7f8c8d; border-top: 1px solid #e1e8ed; }}
-                .email-footer a {{ color: #1abc9c; text-decoration: none; }}
-            </style>
-        </head>
-        <body>
-            <center class="email-wrapper">
-                <table class="email-content" width="100%" cellpadding="0" cellspacing="0" border="0">
-                    <tr>
-                        <td class="email-header">
-                            <h1>Apna Nidhi Tech</h1>
-                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7;">A Empire Of Sapna Portals</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="email-body">
-                            <p style="font-size: 16px; margin-top: 0;">Hello <strong>{user_name}</strong>,</p>
-                            
-                            <!-- 👉 यहाँ सर्विस का नाम जोड़ा गया है ताकि यूजर को पता चले -->
-                            <p style="font-size: 15px; color: #2c3e50;">You have requested an OTP for: <strong>{action_name}</strong></p>
-                            
-                            <p>Please use the secure One-Time Password (OTP) below to complete your action.</p>
-                            
-                            <div class="otp-box">
-                                <span class="otp-code">{otp}</span>
-                            </div>
-                            
-                            <div class="info-box">
-                                <p style="margin: 0;"><strong>Requested Time:</strong> {current_time}</p>
-                            </div>
-                            
-                            <div class="warning-box">
-                                <strong>⚠️ Security Notice:</strong> This OTP is valid for 5 minutes only. Do not share this code with anyone. Nidhi Tech support will never ask for your OTP.
-                            </div>
-                            
-                            <p style="margin-bottom: 0; font-size: 14px;">If you face any issues or did not request this, please contact us immediately at <a href="mailto:contactsapnaportals@gmail.com" style="color: #1abc9c; font-weight: bold;">contactsapnaportals@gmail.com</a>.</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="email-footer">
-                            <p style="margin: 0;">&copy; {datetime.now().year} Apna Nidhi Tech. All rights reserved.</p>
-                        </td>
-                    </tr>
-                </table>
-            </center>
-        </body>
-        </html>
-        """
+        html_content = f"""<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 0; }}
+.email-wrapper {{ width: 100%; table-layout: fixed; background-color: #eef2f7; padding: 40px 0; }}
+.email-content {{ max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); overflow: hidden; border-top: 5px solid #1abc9c; }}
+.email-header {{ background: linear-gradient(135deg, #2c3e50, #1a252f); padding: 30px; text-align: center; color: #ffffff; }}
+.email-header h1 {{ margin: 0; font-size: 24px; letter-spacing: 1px; color: #ffffff; }}
+.email-body {{ padding: 35px 30px; color: #333333; line-height: 1.6; }}
+.otp-box {{ text-align: center; margin: 30px 0; background: #e8f8f5; border: 2px dashed #1abc9c; padding: 20px; border-radius: 8px; }}
+.otp-code {{ font-size: 38px; font-weight: 800; color: #16a085; letter-spacing: 10px; }}
+.info-box {{ background-color: #f8f9fa; border-left: 4px solid #3498db; padding: 15px; margin: 20px 0; font-size: 14px; color: #555555; border-radius: 4px; }}
+.warning-box {{ background-color: #fef9e7; border-left: 4px solid #f1c40f; padding: 15px; margin: 20px 0; font-size: 13px; color: #7d6608; border-radius: 4px; }}
+.email-footer {{ background-color: #f4f6f7; padding: 20px 30px; text-align: center; font-size: 12px; color: #7f8c8d; border-top: 1px solid #e1e8ed; }}
+.email-footer a {{ color: #1abc9c; text-decoration: none; }}
+</style>
+</head>
+<body>
+<center class="email-wrapper">
+<table class="email-content" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td class="email-header">
+<h1>Apna Nidhi Tech</h1>
+<p style="margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7;">A Empire Of Sapna Portals</p>
+</td>
+</tr>
+<tr>
+<td class="email-body">
+<p style="font-size: 16px; margin-top: 0;">Hello <strong>{user_name}</strong>,</p>
+<p style="font-size: 15px; color: #2c3e50;">You have requested an OTP for: <strong>{action_name}</strong></p>
+<p>Please use the secure One-Time Password (OTP) below to complete your action.</p>
+<div class="otp-box">
+<span class="otp-code">{otp}</span>
+</div>
+<div class="info-box">
+<p style="margin: 0;"><strong>Requested Time:</strong> {current_time}</p>
+</div>
+<div class="warning-box">
+<strong>⚠️ Security Notice:</strong> This OTP is valid for 5 minutes only. Do not share this code with anyone. Nidhi Tech support will never ask for your OTP.
+</div>
+<p style="margin-bottom: 0; font-size: 14px;">If you face any issues or did not request this, please contact us immediately at <a href="mailto:contactsapnaportals@gmail.com" style="color: #1abc9c; font-weight: bold;">contactsapnaportals@gmail.com</a>.</p>
+</td>
+</tr>
+<tr>
+<td class="email-footer">
+<p style="margin: 0;">&copy; {datetime.now().year} Apna Nidhi Tech. All rights reserved.</p>
+</td>
+</tr>
+</table>
+</center>
+</body>
+</html>"""
         
         payload = {
             "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech"},
