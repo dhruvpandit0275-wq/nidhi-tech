@@ -97,7 +97,7 @@ def send_premium_mail(target_email, otp, action_name):
         html_content = f"""
         <html>
         <head>
-            <meta charset="UTF-8">
+          <meta charset="UTF-8">
             <style>
                 body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #eef2f7; margin: 0; padding: 0; }}
                 .email-wrapper {{ width: 100%; table-layout: fixed; background-color: #eef2f7; padding: 40px 0; }}
