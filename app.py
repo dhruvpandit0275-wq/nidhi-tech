@@ -89,8 +89,7 @@ def send_premium_mail(target_email, otp, action_name):
             "Content-Type": "application/json"
         }
         
-        utc_now = datetime.now(pytz.utc)
-        ist_now = utc_now + pytz.timezone('Asia/Kolkata').utcoffset(utc_now)
+        ist_now = datetime.now() + timedelta(hours=5, minutes=30)
         current_time = ist_now.strftime("%d-%m-%Y %I:%M %p")
         
         user_name = target_email.split('@')[0].replace('.', ' ').title()
