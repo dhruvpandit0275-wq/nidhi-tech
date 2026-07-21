@@ -117,7 +117,7 @@ def send_premium_mail(target_email, otp, action_name):
                     <tr>
                         <td class="email-header">
                             <h1>Apna Nidhi Tech</h1>
-                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7;">Apna Nidhi Tech Verification Service</p>
+                            <p style="margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7;">A Empire Of Sapna Portals</p>
                         </td>
                     </tr>
                     <tr>
