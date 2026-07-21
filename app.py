@@ -125,7 +125,11 @@ def send_premium_mail(target_email, otp, action_name):
                     <tr>
                         <td class="email-body">
                             <p style="font-size: 16px; margin-top: 0;">Hello <strong>{user_name}</strong>,</p>
-                            <p>We received a verification request for your account. Please use the secure One-Time Password (OTP) below to complete your action.</p>
+                            
+                            <!-- 👉 यहाँ सर्विस का नाम जोड़ा गया है ताकि यूजर को पता चले -->
+                            <p style="font-size: 15px; color: #2c3e50;">You have requested an OTP for: <strong>{action_name}</strong></p>
+                            
+                            <p>Please use the secure One-Time Password (OTP) below to complete your action.</p>
                             
                             <div class="otp-box">
                                 <span class="otp-code">{otp}</span>
