@@ -282,22 +282,29 @@ def submit_pvc_order():
         mobile = request.form.get('mobile')
         address = request.form.get('address')
         quantity = request.form.get('quantity')
+        target_email = request.form.get('target_email', 'contactsapnaportals@gmail.com').strip()
         uploaded_file = request.files.get('document')
 
         if not uploaded_file:
             return jsonify({"status": "error", "message": "कृपया दस्तावेज/PDF अपलोड करें!"}), 400
+
+        # यूनिक आर्डर नंबर जनरेट करना (जैसे: NIDHI-PVC-58421)
+        order_id = f"NIDHI-PVC-{random.randint(10000, 99999)}"
 
         # 2. फाइल को Base64 में बदलना (Brevo API के लिए जरूरी है)
         file_bytes = uploaded_file.read()
         encoded_file = base64.b64encode(file_bytes).decode('utf-8')
         file_name = uploaded_file.filename
 
-        # 3. ईमेल का HTML कंटेंट तैयार करना
+        # 3. ईमेल का HTML कंटेंट तैयार करना (आर्डर नंबर के साथ)
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
             <div style="max-width: 600px; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
                 <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">📦 नया PVC कार्ड ऑर्डर प्राप्त हुआ!</h2>
+                <p style="background: #e8f8f5; padding: 12px; border-radius: 6px; font-size: 16px; color: #16a085; border: 1px dashed #1abc9c;">
+                    <strong>आर्डर आईडी (Order Number):</strong> {order_id}
+                </p>
                 <p><strong>नाम (Name):</strong> {name}</p>
                 <p><strong>मोबाइल (Mobile):</strong> {mobile}</p>
                 <p><strong>पता (Address):</strong> {address}</p>
@@ -310,7 +317,7 @@ def submit_pvc_order():
 
         # 4. Brevo API के जरिए भेजने के लिए Payload तैयार करना
         api_url = "https://api.brevo.com/v3/smtp/email"
-        api_key = os.environ.get("BREVO_API_KEY") # यह आपके एनवायरनमेंट से की उठा लेगा
+        api_key = os.environ.get("BREVO_API_KEY") 
         
         headers = {
             "api-key": api_key,
@@ -320,7 +327,7 @@ def submit_pvc_order():
         payload = {
             "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech Portal"},
             "to": [{"email": target_email}],
-            "subject": f"📦 PVC Order: {name} ({quantity} Cards)",
+            "subject": f"📦 PVC Order [{order_id}]: {name} ({quantity} Cards)",
             "htmlContent": html_content,
             "attachment": [
                 {
@@ -334,8 +341,12 @@ def submit_pvc_order():
         response = requests.post(api_url, json=payload, headers=headers, timeout=15)
 
         if response.status_code in [200, 201]:
-            log_event("SUCCESS", f"PVC Order received and emailed from {name} ({quantity} cards)")
-            return jsonify({"status": "success", "message": "ऑर्डर सफलतापूर्वक सबमिट हो गया है!"}), 200
+            log_event("SUCCESS", f"PVC Order {order_id} received and emailed from {name} ({quantity} cards)")
+            return jsonify({
+                "status": "success", 
+                "message": f"ऑर्डर सफलतापूर्वक सबमिट हो गया है! आर्डर नंबर: {order_id}",
+                "order_id": order_id
+            }), 200
         else:
             print(f"Brevo API Error: {response.text}")
             return jsonify({"status": "error", "message": "ईमेल भेजने में विफल (Brevo Error)"}), 500
@@ -343,6 +354,8 @@ def submit_pvc_order():
     except Exception as e:
         print(f"CRITICAL ERROR in PVC Order: {str(e)}")
         return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
+
+
 
 @app.route('/health-check', methods=['GET'])
 def health_check(): return jsonify({"status": "alive"}), 200
