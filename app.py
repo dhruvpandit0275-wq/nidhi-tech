@@ -324,7 +324,7 @@ def submit_pvc_order():
             return jsonify({"status": "error", "message": "कृपया दस्तावेज/PDF अपलोड करें!"}), 400
 
         # यूनिक आर्डर आईडी जनरेट करना
-        order_id = f"APNA-{random.randint(10000, 99999)}"
+        order_id = f"Nidhi-{random.randint(10000, 99999)}"
 
         # फाइल को Base64 में बदलना
         file_bytes = uploaded_file.read()
@@ -336,7 +336,7 @@ def submit_pvc_order():
         <html>
         <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
             <div style="max-width: 650px; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; text-align: center;">🖨️ Apna Print Portal - नया ऑर्डर प्राप्त हुआ!</h2>
+                <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; text-align: center;">🖨️ Nidhi Tech Print  - नया ऑर्डर प्राप्त हुआ!</h2>
                 
                 <p style="background: #e8f8f5; padding: 12px; border-radius: 6px; font-size: 16px; color: #16a085; border: 1px dashed #1abc9c; text-align: center;">
                     <strong>Order ID:</strong> {order_id} | <strong>Service Type:</strong> {service_type}
