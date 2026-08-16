@@ -274,12 +274,12 @@ def admin_reply():
 
 # file upload Setup for printing portal  #
 
-def send_pvc_email_background(payload, headers, order_id, name, quantity):
+def send_order_email_background(payload, headers, order_id, name, service_type):
     try:
         api_url = "https://api.brevo.com/v3/smtp/email"
         response = requests.post(api_url, json=payload, headers=headers, timeout=25)
         if response.status_code in [200, 201]:
-            log_event("SUCCESS", f"PVC Order {order_id} emailed successfully for {name} ({quantity} cards)")
+            log_event("SUCCESS", f"Order {order_id} ({service_type}) emailed successfully for {name}")
         else:
             print(f"Brevo API Background Error: {response.text}")
     except Exception as e:
@@ -288,45 +288,96 @@ def send_pvc_email_background(payload, headers, order_id, name, quantity):
 @app.route('/submit-pvc-order', methods=['POST'])
 def submit_pvc_order():
     try:
-        # 1. फॉर्म का डेटा प्राप्त करना
-        name = request.form.get('name')
-        mobile = request.form.get('mobile')
-        address = request.form.get('address')
-        quantity = request.form.get('quantity')
+        # यूजर का सारा डेटा कैप्चर करना
+        name = request.form.get('name', 'N/A')
+        mobile = request.form.get('mobile', 'N/A')
+        secondary_mobile = request.form.get('secondary_mobile', 'N/A')
+        user_email = request.form.get('email', 'N/A')
+        username = request.form.get('username', 'N/A')
+        
+        # सर्विस टाइप पहचानना (PVC Order है या T-Shirt या कुछ और)
+        service_type = request.form.get('service_type', '').strip().lower()
+        doc_type = request.form.get('doc_type', 'General Document')
+        
+        # ऑटोमैटिक पहचान (अगर सर्विस टाइप फॉर्म से न मिले, तो doc_type या नाम से पहचानो)
+        if not service_type:
+            if 't-shirt' in doc_type.lower() or 'tshirt' in doc_type.lower():
+                service_type = "T-Shirt Order"
+            else:
+                service_type = "PVC Card Order"
+        else:
+            service_type = service_type.title()
+
+        address = request.form.get('address', 'N/A')
+        village_part = request.form.get('village_part', 'N/A')
+        pin_code = request.form.get('pin_code', 'N/A')
+        nearby = request.form.get('nearby', 'N/A')
+        post = request.form.get('post', 'N/A')
+        district = request.form.get('district', 'N/A')
+        state = request.form.get('state', 'N/A')
+        village_city = request.form.get('village_city', 'N/A')
+        
         target_email = request.form.get('target_email', 'contactsapnaportals@gmail.com').strip()
         uploaded_file = request.files.get('document')
 
         if not uploaded_file:
             return jsonify({"status": "error", "message": "कृपया दस्तावेज/PDF अपलोड करें!"}), 400
 
-        # यूनिक आर्डर नंबर जनरेट करना (जैसे: NIDHI-PVC-58421)
-        order_id = f"NIDHI-PVC-{random.randint(10000, 99999)}"
+        # यूनिक आर्डर आईडी जनरेट करना
+        order_id = f"APNA-{random.randint(10000, 99999)}"
 
-        # 2. फाइल को Base64 में बदलना (Brevo API के लिए जरूरी है)
+        # फाइल को Base64 में बदलना
         file_bytes = uploaded_file.read()
         encoded_file = base64.b64encode(file_bytes).decode('utf-8')
         file_name = uploaded_file.filename
 
-        # 3. ईमेल का HTML कंटेंट तैयार करना (आर्डर नंबर के साथ)
+        # ईमेल का डिज़ाइन (सारी जानकारी साफ़-साफ़ दिखाने के लिए)
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
-            <div style="max-width: 600px; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-                <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">📦 नया PVC कार्ड ऑर्डर प्राप्त हुआ!</h2>
-                <p style="background: #e8f8f5; padding: 12px; border-radius: 6px; font-size: 16px; color: #16a085; border: 1px dashed #1abc9c;">
-                    <strong>आर्डर आईडी (Order Number):</strong> {order_id}
+            <div style="max-width: 650px; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; text-align: center;">🖨️ Apna Print Portal - नया ऑर्डर प्राप्त हुआ!</h2>
+                
+                <p style="background: #e8f8f5; padding: 12px; border-radius: 6px; font-size: 16px; color: #16a085; border: 1px dashed #1abc9c; text-align: center;">
+                    <strong>Order ID:</strong> {order_id} | <strong>Service Type:</strong> {service_type}
                 </p>
-                <p><strong>नाम (Name):</strong> {name}</p>
-                <p><strong>मोबाइल (Mobile):</strong> {mobile}</p>
-                <p><strong>पता (Address):</strong> {address}</p>
-                <p><strong>कार्ड की संख्या (Quantity):</strong> {quantity}</p>
-                <p style="color: #e67e22; font-weight: bold;">📎 ग्राहक का डॉक्यूमेंट इस ईमेल के साथ संलग्न (Attached) है।</p>
+
+                <h3 style="color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-top: 20px;">👤 यूजर और लॉगिन विवरण (User Details)</h3>
+                <table style="width: 100%; font-size: 14px; color: #333333; margin-top: 10px;">
+                    <tr><td><strong>Register Username:</strong></td><td>{username}</td></tr>
+                    <tr><td><strong>Full Name:</strong></td><td>{name}</td></tr>
+                    <tr><td><strong>Primary Mobile:</strong></td><td>{mobile}</td></tr>
+                    <tr><td><strong>Secondary Number:</strong></td><td>{secondary_mobile}</td></tr>
+                    <tr><td><strong>Email ID:</strong></td><td>{user_email}</td></tr>
+                </table>
+
+                <h3 style="color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-top: 20px;">📄 डॉक्यूमेंट / सर्विस विवरण</h3>
+                <table style="width: 100%; font-size: 14px; color: #333333; margin-top: 10px;">
+                    <tr><td><strong>Service Name:</strong></td><td><span style="background: #e67e22; color: white; padding: 3px 8px; border-radius: 4px;">{service_type}</span></td></tr>
+                    <tr><td><strong>Document Type:</strong></td><td>{doc_type}</td></tr>
+                    <tr><td><strong>Attached File Name:</strong></td><td>{file_name}</td></tr>
+                </table>
+
+                <h3 style="color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-top: 20px;">📍 पूरा पता (Complete Address)</h3>
+                <table style="width: 100%; font-size: 14px; color: #333333; margin-top: 10px;">
+                    <tr><td><strong>Address Line:</strong></td><td>{address}</td></tr>
+                    <tr><td><strong>Village Part:</strong></td><td>{village_part}</td></tr>
+                    <tr><td><strong>Village / City:</strong></td><td>{village_city}</td></tr>
+                    <tr><td><strong>Post Office (Post):</strong></td><td>{post}</td></tr>
+                    <tr><td><strong>Nearby Landmark:</strong></td><td>{nearby}</td></tr>
+                    <tr><td><strong>PIN Code:</strong></td><td>{pin_code}</td></tr>
+                    <tr><td><strong>District:</strong></td><td>{district}</td></tr>
+                    <tr><td><strong>State:</strong></td><td>{state}</td></tr>
+                </table>
+
+                <p style="margin-top: 25px; padding: 10px; background: #fef9e7; border-left: 4px solid #f1c40f; font-size: 13px; color: #7d6608;">
+                    📎 <strong>नोट:</strong> ग्राहक का असली डॉक्यूमेंट इस ईमेल के साथ अटैच कर दिया गया है।
+                </p>
             </div>
         </body>
         </html>
         """
 
-        # 4. Brevo API के जरिए भेजने के लिए Payload तैयार करना
         api_url = "https://api.brevo.com/v3/smtp/email"
         api_key = os.environ.get("BREVO_API_KEY") 
         
@@ -336,9 +387,9 @@ def submit_pvc_order():
         }
 
         payload = {
-            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech Portal"},
+            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Print Portal"},
             "to": [{"email": target_email}],
-            "subject": f"📦 PVC Order [{order_id}]: {name} ({quantity} Cards)",
+            "subject": f"📦 New {service_type} [{order_id}] - {name}",
             "htmlContent": html_content,
             "attachment": [
                 {
@@ -348,14 +399,14 @@ def submit_pvc_order():
             ]
         }
 
-        # 5. बैकग्राउंड थ्रेड शुरू करना ताकि यूजर को तुरंत रिस्पॉन्स मिले और स्पीड सुपरफास्ट हो जाए
+        # बैकग्राउंड थ्रेड ताकि रिस्पॉन्स सुपरफास्ट मिले
         email_thread = threading.Thread(
-            target=send_pvc_email_background,
-            args=(payload, headers, order_id, name, quantity)
+            target=send_order_email_background,
+            args=(payload, headers, order_id, name, service_type)
         )
         email_thread.start()
 
-        log_event("SUCCESS", f"PVC Order {order_id} received from {name}")
+        log_event("SUCCESS", f"Order {order_id} ({service_type}) received from {name}")
         return jsonify({
             "status": "success", 
             "message": f"ऑर्डर सफलतापूर्वक सबमिट हो गया है! आर्डर नंबर: {order_id}",
@@ -363,9 +414,8 @@ def submit_pvc_order():
         }), 200
 
     except Exception as e:
-        print(f"CRITICAL ERROR in PVC Order: {str(e)}")
+        print(f"CRITICAL ERROR in Order Submission: {str(e)}")
         return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
-
 
 
 @app.route('/health-check', methods=['GET'])
