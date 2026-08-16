@@ -3,6 +3,7 @@ import time
 import random
 import requests
 import threading
+import base64
 from datetime import datetime
 from datetime import timedelta
 from flask import Flask, request, jsonify, render_template, redirect, url_for
@@ -269,6 +270,79 @@ def admin_reply():
             return jsonify({"status": "error", "message": "Failed to send email"}), 500
             
     return jsonify({"error": "Unauthorized"}), 403
+
+
+# file upload Setup for printing portal  #
+
+@app.route('/submit-pvc-order', methods=['POST'])
+def submit_pvc_order():
+    try:
+        # 1. फॉर्म का डेटा प्राप्त करना
+        name = request.form.get('name')
+        mobile = request.form.get('mobile')
+        address = request.form.get('address')
+        quantity = request.form.get('quantity')
+        uploaded_file = request.files.get('document')
+
+        if not uploaded_file:
+            return jsonify({"status": "error", "message": "कृपया दस्तावेज/PDF अपलोड करें!"}), 400
+
+        # 2. फाइल को Base64 में बदलना (Brevo API के लिए जरूरी है)
+        file_bytes = uploaded_file.read()
+        encoded_file = base64.b64encode(file_bytes).decode('utf-8')
+        file_name = uploaded_file.filename
+
+        # 3. ईमेल का HTML कंटेंट तैयार करना
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
+            <div style="max-width: 600px; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">📦 नया PVC कार्ड ऑर्डर प्राप्त हुआ!</h2>
+                <p><strong>नाम (Name):</strong> {name}</p>
+                <p><strong>मोबाइल (Mobile):</strong> {mobile}</p>
+                <p><strong>पता (Address):</strong> {address}</p>
+                <p><strong>कार्ड की संख्या (Quantity):</strong> {quantity}</p>
+                <p style="color: #e67e22; font-weight: bold;">📎 ग्राहक का डॉक्यूमेंट इस ईमेल के साथ संलग्न (Attached) है।</p>
+            </div>
+        </body>
+        </html>
+        """
+
+        # 4. Brevo API के जरिए भेजने के लिए Payload तैयार करना
+        api_url = "https://api.brevo.com/v3/smtp/email"
+        api_key = os.environ.get("BREVO_API_KEY") # यह आपके एनवायरनमेंट से की उठा लेगा
+        
+        headers = {
+            "api-key": api_key,
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech Portal"},
+            "to": [{"email": "contactsapnaportals@gmail.com"}], # जिस ईमेल पर आपको आर्डर मंगाना है
+            "subject": f"📦 PVC Order: {name} ({quantity} Cards)",
+            "htmlContent": html_content,
+            "attachment": [
+                {
+                    "content": encoded_file,
+                    "name": file_name
+                }
+            ]
+        }
+
+        # 5. API रिक्वेस्ट भेजना
+        response = requests.post(api_url, json=payload, headers=headers, timeout=15)
+
+        if response.status_code in [200, 201]:
+            log_event("SUCCESS", f"PVC Order received and emailed from {name} ({quantity} cards)")
+            return jsonify({"status": "success", "message": "ऑर्डर सफलतापूर्वक सबमिट हो गया है!"}), 200
+        else:
+            print(f"Brevo API Error: {response.text}")
+            return jsonify({"status": "error", "message": "ईमेल भेजने में विफल (Brevo Error)"}), 500
+
+    except Exception as e:
+        print(f"CRITICAL ERROR in PVC Order: {str(e)}")
+        return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
 
 @app.route('/health-check', methods=['GET'])
 def health_check(): return jsonify({"status": "alive"}), 200
