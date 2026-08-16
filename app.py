@@ -274,6 +274,17 @@ def admin_reply():
 
 # file upload Setup for printing portal  #
 
+def send_pvc_email_background(payload, headers, order_id, name, quantity):
+    try:
+        api_url = "https://api.brevo.com/v3/smtp/email"
+        response = requests.post(api_url, json=payload, headers=headers, timeout=25)
+        if response.status_code in [200, 201]:
+            log_event("SUCCESS", f"PVC Order {order_id} emailed successfully for {name} ({quantity} cards)")
+        else:
+            print(f"Brevo API Background Error: {response.text}")
+    except Exception as e:
+        print(f"Background Email Error: {str(e)}")
+
 @app.route('/submit-pvc-order', methods=['POST'])
 def submit_pvc_order():
     try:
@@ -337,19 +348,19 @@ def submit_pvc_order():
             ]
         }
 
-        # 5. API रिक्वेस्ट भेजना
-        response = requests.post(api_url, json=payload, headers=headers, timeout=15)
+        # 5. बैकग्राउंड थ्रेड शुरू करना ताकि यूजर को तुरंत रिस्पॉन्स मिले और स्पीड सुपरफास्ट हो जाए
+        email_thread = threading.Thread(
+            target=send_pvc_email_background,
+            args=(payload, headers, order_id, name, quantity)
+        )
+        email_thread.start()
 
-        if response.status_code in [200, 201]:
-            log_event("SUCCESS", f"PVC Order {order_id} received and emailed from {name} ({quantity} cards)")
-            return jsonify({
-                "status": "success", 
-                "message": f"ऑर्डर सफलतापूर्वक सबमिट हो गया है! आर्डर नंबर: {order_id}",
-                "order_id": order_id
-            }), 200
-        else:
-            print(f"Brevo API Error: {response.text}")
-            return jsonify({"status": "error", "message": "ईमेल भेजने में विफल (Brevo Error)"}), 500
+        log_event("SUCCESS", f"PVC Order {order_id} received from {name}")
+        return jsonify({
+            "status": "success", 
+            "message": f"ऑर्डर सफलतापूर्वक सबमिट हो गया है! आर्डर नंबर: {order_id}",
+            "order_id": order_id
+        }), 200
 
     except Exception as e:
         print(f"CRITICAL ERROR in PVC Order: {str(e)}")
