@@ -273,7 +273,6 @@ def admin_reply():
 
 
 # file upload Setup for printing portal  #
-
 def send_order_email_background(payload, headers, order_id, name, service_type):
     try:
         api_url = "https://api.brevo.com/v3/smtp/email"
@@ -324,55 +323,65 @@ def submit_pvc_order():
             return jsonify({"status": "error", "message": "कृपया दस्तावेज/PDF अपलोड करें!"}), 400
 
         # यूनिक आर्डर आईडी जनरेट करना
-        order_id = f"Nidhi-{random.randint(10000, 99999)}"
+        order_id = f"NIDHI-{random.randint(10000, 99999)}"
 
-        # फाइल को Base64 में बदलना
+        # फाइल को 100% ऑरिजिनल क्वालिटी में Base64 में बदलना (बिना क्वालिटी घटाए)
         file_bytes = uploaded_file.read()
         encoded_file = base64.b64encode(file_bytes).decode('utf-8')
         file_name = uploaded_file.filename
 
-        # ईमेल का डिज़ाइन (सारी जानकारी साफ़-साफ़ दिखाने के लिए)
+        # अत्यधिक प्रोफेशनल और प्रीमियम ईमेल डिज़ाइन
         html_content = f"""
         <html>
-        <body style="font-family: Arial, sans-serif; background-color: #f4f6f9; padding: 20px;">
-            <div style="max-width: 650px; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                <h2 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; text-align: center;">🖨️ Nidhi Tech Print  - नया ऑर्डर प्राप्त हुआ!</h2>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
+            <div style="max-width: 680px; background: #ffffff; padding: 35px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 0 auto; border-top: 6px solid #2c3e50;">
                 
-                <p style="background: #e8f8f5; padding: 12px; border-radius: 6px; font-size: 16px; color: #16a085; border: 1px dashed #1abc9c; text-align: center;">
-                    <strong>Order ID:</strong> {order_id} | <strong>Service Type:</strong> {service_type}
-                </p>
+                <!-- Header -->
+                <div style="text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 20px; margin-bottom: 25px;">
+                    <h2 style="color: #2c3e50; margin: 0; font-size: 24px; font-weight: 700;">🖨️ Apna Nidhi Tech</h2>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 14px;">Professional Printing & Portal Services</p>
+                </div>
 
-                <h3 style="color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-top: 20px;">👤 यूजर और लॉगिन विवरण (User Details)</h3>
-                <table style="width: 100%; font-size: 14px; color: #333333; margin-top: 10px;">
-                    <tr><td><strong>Register Username:</strong></td><td>{username}</td></tr>
-                    <tr><td><strong>Full Name:</strong></td><td>{name}</td></tr>
-                    <tr><td><strong>Primary Mobile:</strong></td><td>{mobile}</td></tr>
-                    <tr><td><strong>Secondary Number:</strong></td><td>{secondary_mobile}</td></tr>
-                    <tr><td><strong>Email ID:</strong></td><td>{user_email}</td></tr>
+                <!-- Order Badge -->
+                <div style="background: linear-gradient(135deg, #e8f8f5, #d1f2eb); padding: 15px; border-radius: 8px; font-size: 15px; color: #117a65; border: 1px solid #a3e4d7; text-align: center; margin-bottom: 25px;">
+                    <strong>Order ID:</strong> <span style="color: #0e6251;">{order_id}</span> &nbsp;|&nbsp; <strong>Service:</strong> <span style="color: #0e6251;">{service_type}</span>
+                </div>
+
+                <!-- Section: User Details -->
+                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #3498db; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">👤 यूजर और लॉगिन विवरण (User Details)</h3>
+                <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
+                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Register Username:</strong></td><td style="padding: 8px;">{username}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>Full Name:</strong></td><td style="padding: 8px;">{name}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Primary Mobile:</strong></td><td style="padding: 8px;">{mobile}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>Secondary Number:</strong></td><td style="padding: 8px;">{secondary_mobile}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Email ID:</strong></td><td style="padding: 8px;">{user_email}</td></tr>
                 </table>
 
-                <h3 style="color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-top: 20px;">📄 डॉक्यूमेंट / सर्विस विवरण</h3>
-                <table style="width: 100%; font-size: 14px; color: #333333; margin-top: 10px;">
-                    <tr><td><strong>Service Name:</strong></td><td><span style="background: #e67e22; color: white; padding: 3px 8px; border-radius: 4px;">{service_type}</span></td></tr>
-                    <tr><td><strong>Document Type:</strong></td><td>{doc_type}</td></tr>
-                    <tr><td><strong>Attached File Name:</strong></td><td>{file_name}</td></tr>
+                <!-- Section: Document Details -->
+                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #e67e22; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📄 डॉक्यूमेंट / सर्विस विवरण</h3>
+                <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
+                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Service Name:</strong></td><td style="padding: 8px;"><span style="background: #e67e22; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">{service_type}</span></td></tr>
+                    <tr><td style="padding: 8px;"><strong>Document Type:</strong></td><td style="padding: 8px;">{doc_type}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Attached File Name:</strong></td><td style="padding: 8px; color: #2980b9; font-weight: bold;">{file_name}</td></tr>
                 </table>
 
-                <h3 style="color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px; margin-top: 20px;">📍 पूरा पता (Complete Address)</h3>
-                <table style="width: 100%; font-size: 14px; color: #333333; margin-top: 10px;">
-                    <tr><td><strong>Address Line:</strong></td><td>{address}</td></tr>
-                    <tr><td><strong>Village Part:</strong></td><td>{village_part}</td></tr>
-                    <tr><td><strong>Village / City:</strong></td><td>{village_city}</td></tr>
-                    <tr><td><strong>Post Office (Post):</strong></td><td>{post}</td></tr>
-                    <tr><td><strong>Nearby Landmark:</strong></td><td>{nearby}</td></tr>
-                    <tr><td><strong>PIN Code:</strong></td><td>{pin_code}</td></tr>
-                    <tr><td><strong>District:</strong></td><td>{district}</td></tr>
-                    <tr><td><strong>State:</strong></td><td>{state}</td></tr>
+                <!-- Section: Complete Address -->
+                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #27ae60; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📍 पूरा पता (Complete Address)</h3>
+                <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
+                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Address Line:</strong></td><td style="padding: 8px;">{address}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>Village Part:</strong></td><td style="padding: 8px;">{village_part}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Village / City:</strong></td><td style="padding: 8px;">{village_city}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>Post Office (Post):</strong></td><td style="padding: 8px;">{post}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Nearby Landmark:</strong></td><td style="padding: 8px;">{nearby}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>PIN Code:</strong></td><td style="padding: 8px; font-weight: bold; color: #c0392b;">{pin_code}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>District:</strong></td><td style="padding: 8px;">{district}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>State:</strong></td><td style="padding: 8px;">{state}</td></tr>
                 </table>
 
-                <p style="margin-top: 25px; padding: 10px; background: #fef9e7; border-left: 4px solid #f1c40f; font-size: 13px; color: #7d6608;">
-                    📎 <strong>नोट:</strong> ग्राहक का असली डॉक्यूमेंट इस ईमेल के साथ अटैच कर दिया गया है।
-                </p>
+                <!-- Footer Note -->
+                <div style="margin-top: 30px; padding: 12px; background: #fef9e7; border-left: 4px solid #f1c40f; font-size: 13px; color: #7d6608; border-radius: 4px;">
+                    📎 <strong>नोट:</strong> ग्राहक का असली डॉक्यूमेंट 100% ऑरिजिनल क्वालिटी में इस ईमेल के साथ अटैच कर दिया गया है।
+                </div>
             </div>
         </body>
         </html>
@@ -387,7 +396,7 @@ def submit_pvc_order():
         }
 
         payload = {
-            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Print Portal"},
+            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Nidhi Tech"},
             "to": [{"email": target_email}],
             "subject": f"📦 New {service_type} [{order_id}] - {name}",
             "htmlContent": html_content,
@@ -416,6 +425,7 @@ def submit_pvc_order():
     except Exception as e:
         print(f"CRITICAL ERROR in Order Submission: {str(e)}")
         return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
+
 
 
 @app.route('/health-check', methods=['GET'])
