@@ -319,7 +319,7 @@ def submit_pvc_order():
 
         payload = {
             "sender": {"email": "contactsapnaportals@gmail.com", "name": "Nidhi Tech Portal"},
-            "to": [{"email": "contactsapnaportals@gmail.com"}], # जिस ईमेल पर आपको आर्डर मंगाना है
+            "to": [{"email": target_email}],
             "subject": f"📦 PVC Order: {name} ({quantity} Cards)",
             "htmlContent": html_content,
             "attachment": [
