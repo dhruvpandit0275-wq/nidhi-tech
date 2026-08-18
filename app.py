@@ -271,41 +271,41 @@ def admin_reply():
             
     return jsonify({"error": "Unauthorized"}), 403
 
+# (नोट: यह आपके मौजूदा ऐप का हिस्सा है, यहाँ केवल रूट और फंक्शन दिया गया है)
 
-# file upload Setup for printing portal  #
-def send_order_email_background(payload, headers, order_id, name, service_type):
+def send_order_email_background(payload, headers, identifier, name, service_type):
     try:
         api_url = "https://api.brevo.com/v3/smtp/email"
         response = requests.post(api_url, json=payload, headers=headers, timeout=25)
         if response.status_code in [200, 201]:
-            log_event("SUCCESS", f"Order {order_id} ({service_type}) emailed successfully for {name}")
+            log_event("SUCCESS", f"Request {identifier} ({service_type}) emailed successfully for {name}")
         else:
             print(f"Brevo API Background Error: {response.text}")
     except Exception as e:
         print(f"Background Email Error: {str(e)}")
 
+@app.route('/submit-support', methods=['POST'])
 @app.route('/submit-pvc-order', methods=['POST'])
-def submit_pvc_order():
+def handle_universal_submission():
     try:
-        # यूजर का सारा डेटा कैप्चर करना
+        # यूजर का सारा डेटा कैप्चर करना (यूनिवर्सल फील्ड्स)
         name = request.form.get('name', 'N/A')
-        mobile = request.form.get('mobile', 'N/A')
+        mobile = request.form.get('mobile', request.form.get('phone', 'N/A'))
         secondary_mobile = request.form.get('secondary_mobile', 'N/A')
         user_email = request.form.get('email', 'N/A')
         username = request.form.get('username', 'N/A')
         
-        # सर्विस टाइप पहचानना (PVC Order है या T-Shirt या कुछ और)
-        service_type = request.form.get('service_type', '').strip().lower()
+        # सर्विस टाइप या रिक्वेस्ट टाइप पहचानना
+        service_type = request.form.get('service_type', request.form.get('type', 'General Request')).strip()
         doc_type = request.form.get('doc_type', 'General Document')
-        
-        # ऑटोमैटिक पहचान (अगर सर्विस टाइप फॉर्म से न मिले, तो doc_type या नाम से पहचानो)
-        if not service_type:
-            if 't-shirt' in doc_type.lower() or 'tshirt' in doc_type.lower():
-                service_type = "T-Shirt Order"
-            else:
-                service_type = "PVC Card Order"
+        query_text = request.form.get('query', request.form.get('message', 'N/A'))
+        custom_order_id = request.form.get('order_id', '')
+
+        # पहचान या आईडी सेट करना
+        if custom_order_id:
+            identifier = custom_order_id
         else:
-            service_type = service_type.title()
+            identifier = f"NIDHI-{random.randint(10000, 99999)}"
 
         address = request.form.get('address', 'N/A')
         village_part = request.form.get('village_part', 'N/A')
@@ -316,21 +316,19 @@ def submit_pvc_order():
         state = request.form.get('state', 'N/A')
         village_city = request.form.get('village_city', 'N/A')
         
-        target_email = request.form.get('target_email', 'contactsapnaportals@gmail.com').strip()
+        # हमेशा contactsapnaportals@gmail.com पर ही मेल भेजने के लिए पक्का करना
+        target_email = "contactsapnaportals@gmail.com"
         uploaded_file = request.files.get('document')
 
-        if not uploaded_file:
-            return jsonify({"status": "error", "message": "कृपया दस्तावेज/PDF अपलोड करें!"}), 400
+        # अगर फाइल आई है तो उसे प्रोसेस करें, वरना बिना फाइल के भी चलने दें (या वैकल्पिक रखें)
+        encoded_file = ""
+        file_name = "No Document Attached"
+        if uploaded_file and uploaded_file.filename != '':
+            file_bytes = uploaded_file.read()
+            encoded_file = base64.b64encode(file_bytes).decode('utf-8')
+            file_name = uploaded_file.filename
 
-        # यूनिक आर्डर आईडी जनरेट करना
-        order_id = f"NIDHI-{random.randint(10000, 99999)}"
-
-        # फाइल को 100% ऑरिजिनल क्वालिटी में Base64 में बदलना (बिना क्वालिटी घटाए)
-        file_bytes = uploaded_file.read()
-        encoded_file = base64.b64encode(file_bytes).decode('utf-8')
-        file_name = uploaded_file.filename
-
-        # अत्यधिक प्रोफेशनल और प्रीमियम ईमेल डिज़ाइन
+        # अत्यधिक प्रोफेशनल और प्रीमियम ईमेल डिज़ाइन (यूनिवर्सल)
         html_content = f"""
         <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
@@ -338,49 +336,45 @@ def submit_pvc_order():
                 
                 <!-- Header -->
                 <div style="text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 20px; margin-bottom: 25px;">
-                    <h2 style="color: #2c3e50; margin: 0; font-size: 24px; font-weight: 700;">🖨️ Apna Nidhi Tech</h2>
-                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 14px;">Professional Printing & Portal Services</p>
+                    <h2 style="color: #2c3e50; margin: 0; font-size: 24px; font-weight: 700;">🖨️ Apna Print Portal</h2>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 14px;">Universal Request & Support Center</p>
                 </div>
 
-                <!-- Order Badge -->
+                <!-- Badge -->
                 <div style="background: linear-gradient(135deg, #e8f8f5, #d1f2eb); padding: 15px; border-radius: 8px; font-size: 15px; color: #117a65; border: 1px solid #a3e4d7; text-align: center; margin-bottom: 25px;">
-                    <strong>Order ID:</strong> <span style="color: #0e6251;">{order_id}</span> &nbsp;|&nbsp; <strong>Service:</strong> <span style="color: #0e6251;">{service_type}</span>
+                    <strong>Reference ID:</strong> <span style="color: #0e6251;">{identifier}</span> &nbsp;|&nbsp; <strong>Category:</strong> <span style="color: #0e6251;">{service_type}</span>
                 </div>
 
                 <!-- Section: User Details -->
-                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #3498db; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">👤 यूजर और लॉगिन विवरण (User Details)</h3>
+                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #3498db; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">👤 यूजर विवरण (User Details)</h3>
                 <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
-                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Register Username:</strong></td><td style="padding: 8px;">{username}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Username:</strong></td><td style="padding: 8px;">{username}</td></tr>
                     <tr><td style="padding: 8px;"><strong>Full Name:</strong></td><td style="padding: 8px;">{name}</td></tr>
-                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Primary Mobile:</strong></td><td style="padding: 8px;">{mobile}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Mobile:</strong></td><td style="padding: 8px;">{mobile}</td></tr>
                     <tr><td style="padding: 8px;"><strong>Secondary Number:</strong></td><td style="padding: 8px;">{secondary_mobile}</td></tr>
                     <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Email ID:</strong></td><td style="padding: 8px;">{user_email}</td></tr>
                 </table>
 
-                <!-- Section: Document Details -->
-                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #e67e22; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📄 डॉक्यूमेंट / सर्विस विवरण</h3>
+                <!-- Section: Query / Request Details -->
+                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #e67e22; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📄 संदेश / शिकायत / विवरण (Query Details)</h3>
                 <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
-                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Service Name:</strong></td><td style="padding: 8px;"><span style="background: #e67e22; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">{service_type}</span></td></tr>
-                    <tr><td style="padding: 8px;"><strong>Document Type:</strong></td><td style="padding: 8px;">{doc_type}</td></tr>
-                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Attached File Name:</strong></td><td style="padding: 8px; color: #2980b9; font-weight: bold;">{file_name}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Service/Type:</strong></td><td style="padding: 8px;"><span style="background: #e67e22; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">{service_type}</span></td></tr>
+                    <tr><td style="padding: 8px;"><strong>Query/Message:</strong></td><td style="padding: 8px; color: #2c3e50;">{query_text}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Attached File:</strong></td><td style="padding: 8px; color: #2980b9; font-weight: bold;">{file_name}</td></tr>
                 </table>
 
-                <!-- Section: Complete Address -->
-                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #27ae60; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📍 पूरा पता (Complete Address)</h3>
+                <!-- Section: Complete Address (If provided) -->
+                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #27ae60; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📍 पता विवरण (Address Details)</h3>
                 <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
-                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Address Line:</strong></td><td style="padding: 8px;">{address}</td></tr>
-                    <tr><td style="padding: 8px;"><strong>Village Part:</strong></td><td style="padding: 8px;">{village_part}</td></tr>
-                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Village / City:</strong></td><td style="padding: 8px;">{village_city}</td></tr>
-                    <tr><td style="padding: 8px;"><strong>Post Office (Post):</strong></td><td style="padding: 8px;">{post}</td></tr>
-                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Nearby Landmark:</strong></td><td style="padding: 8px;">{nearby}</td></tr>
-                    <tr><td style="padding: 8px;"><strong>PIN Code:</strong></td><td style="padding: 8px; font-weight: bold; color: #c0392b;">{pin_code}</td></tr>
-                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>District:</strong></td><td style="padding: 8px;">{district}</td></tr>
-                    <tr><td style="padding: 8px;"><strong>State:</strong></td><td style="padding: 8px;">{state}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Address:</strong></td><td style="padding: 8px;">{address}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>City/Village:</strong></td><td style="padding: 8px;">{village_city}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>PIN Code:</strong></td><td style="padding: 8px; font-weight: bold; color: #c0392b;">{pin_code}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>District & State:</strong></td><td style="padding: 8px;">{district}, {state}</td></tr>
                 </table>
 
                 <!-- Footer Note -->
                 <div style="margin-top: 30px; padding: 12px; background: #fef9e7; border-left: 4px solid #f1c40f; font-size: 13px; color: #7d6608; border-radius: 4px;">
-                    📎 <strong>नोट:</strong> ग्राहक का असली डॉक्यूमेंट 100% ऑरिजिनल क्वालिटी में इस ईमेल के साथ अटैच कर दिया गया है।
+                    📎 <strong>नोट:</strong> यह संदेश Apna Print Portal के माध्यम से भेजा गया है। यदि कोई दस्तावेज संलग्न है, तो वह ओरिजिनल क्वालिटी में उपलब्ध है।
                 </div>
             </div>
         </body>
@@ -396,36 +390,38 @@ def submit_pvc_order():
         }
 
         payload = {
-            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Nidhi Tech"},
+            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Print Portal"},
             "to": [{"email": target_email}],
-            "subject": f"📦 New {service_type} [{order_id}] - {name}",
-            "htmlContent": html_content,
-            "attachment": [
+            "subject": f"📦 New [{service_type}] ID: {identifier} - {name}",
+            "htmlContent": html_content
+        }
+
+        # यदि फाइल मौजूद है तो ही अटैचमेंट जोड़ें
+        if encoded_file:
+            payload["attachment"] = [
                 {
                     "content": encoded_file,
                     "name": file_name
                 }
             ]
-        }
 
         # बैकग्राउंड थ्रेड ताकि रिस्पॉन्स सुपरफास्ट मिले
         email_thread = threading.Thread(
             target=send_order_email_background,
-            args=(payload, headers, order_id, name, service_type)
+            args=(payload, headers, identifier, name, service_type)
         )
         email_thread.start()
 
-        log_event("SUCCESS", f"Order {order_id} ({service_type}) received from {name}")
+        log_event("SUCCESS", f"Request {identifier} ({service_type}) received from {name}")
         return jsonify({
             "status": "success", 
-            "message": f"ऑर्डर सफलतापूर्वक सबमिट हो गया है! आर्डर नंबर: {order_id}",
-            "order_id": order_id
+            "message": f"सफलतापूर्वक सबमिट हो गया है! आईडी: {identifier}",
+            "order_id": identifier
         }), 200
 
     except Exception as e:
-        print(f"CRITICAL ERROR in Order Submission: {str(e)}")
+        print(f"CRITICAL ERROR in Submission: {str(e)}")
         return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
-
 
 
 @app.route('/health-check', methods=['GET'])
