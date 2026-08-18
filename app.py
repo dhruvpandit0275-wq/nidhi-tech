@@ -272,13 +272,12 @@ def admin_reply():
     return jsonify({"error": "Unauthorized"}), 403
 
 # (नोट: यह आपके मौजूदा ऐप का हिस्सा है, यहाँ केवल रूट और फंक्शन दिया गया है)
-
 def send_order_email_background(payload, headers, identifier, name, service_type):
     try:
         api_url = "https://api.brevo.com/v3/smtp/email"
         response = requests.post(api_url, json=payload, headers=headers, timeout=25)
         if response.status_code in [200, 201]:
-            log_event("SUCCESS", f"Request {identifier} ({service_type}) emailed successfully for {name}")
+            print(f"SUCCESS: Request {identifier} ({service_type}) emailed successfully for {name}")
         else:
             print(f"Brevo API Background Error: {response.text}")
     except Exception as e:
@@ -286,41 +285,38 @@ def send_order_email_background(payload, headers, identifier, name, service_type
 
 @app.route('/submit-support', methods=['POST'])
 @app.route('/submit-pvc-order', methods=['POST'])
-def handle_universal_submission():
+@app.route('/submit-universal-form', methods=['POST'])
+def handle_advanced_universal_submission():
     try:
-        # यूजर का सारा डेटा कैप्चर करना (यूनिवर्सल फील्ड्स)
+        # 1. बेसिक यूजर डेटा कैप्चर (हर फॉर्म के लिए कॉमन)
         name = request.form.get('name', 'N/A')
         mobile = request.form.get('mobile', request.form.get('phone', 'N/A'))
         secondary_mobile = request.form.get('secondary_mobile', 'N/A')
         user_email = request.form.get('email', 'N/A')
         username = request.form.get('username', 'N/A')
         
-        # सर्विस टाइप या रिक्वेस्ट टाइप पहचानना
-        service_type = request.form.get('service_type', request.form.get('type', 'General Request')).strip()
-        doc_type = request.form.get('doc_type', 'General Document')
-        query_text = request.form.get('query', request.form.get('message', 'N/A'))
+        # 2. फॉर्म टाइप और सर्विस टाइप को अलग-भाग में पहचानना (मिक्सअप रोकने के लिए)
+        form_source = request.form.get('form_source', 'General Portal') # जैसे: Support, PVC Order, Voter List आदि
+        service_type = request.form.get('service_type', request.form.get('type', 'Standard Request')).strip()
+        query_text = request.form.get('query', request.form.get('message', request.form.get('description', 'N/A')))
         custom_order_id = request.form.get('order_id', '')
 
-        # पहचान या आईडी सेट करना
+        # स्मार्ट आईडी जनरेशन
         if custom_order_id:
             identifier = custom_order_id
         else:
-            identifier = f"NIDHI-{random.randint(10000, 99999)}"
+            prefix = "SUP" if "support" in request.path.lower() else "APP"
+            identifier = f"{prefix}-{random.randint(100000, 999999)}"
 
-        address = request.form.get('address', 'N/A')
-        village_part = request.form.get('village_part', 'N/A')
-        pin_code = request.form.get('pin_code', 'N/A')
-        nearby = request.form.get('nearby', 'N/A')
-        post = request.form.get('post', 'N/A')
-        district = request.form.get('district', 'N/A')
-        state = request.form.get('state', 'N/A')
-        village_city = request.form.get('village_city', 'N/A')
-        
-        # हमेशा contactsapnaportals@gmail.com पर ही मेल भेजने के लिए पक्का करना
+        # 3. डायनेमिक और एक्सटेंडेबल एड्रेस / अन्य फील्ड्स (बिना किसी एरर के)
+        extra_fields = {}
+        for key, value in request.form.items():
+            if key not in ['name', 'mobile', 'phone', 'secondary_mobile', 'email', 'username', 'form_source', 'service_type', 'type', 'query', 'message', 'description', 'order_id', 'target_email']:
+                extra_fields[key.replace('_', ' ').title()] = value
+
         target_email = "contactsapnaportals@gmail.com"
         uploaded_file = request.files.get('document')
 
-        # अगर फाइल आई है तो उसे प्रोसेस करें, वरना बिना फाइल के भी चलने दें (या वैकल्पिक रखें)
         encoded_file = ""
         file_name = "No Document Attached"
         if uploaded_file and uploaded_file.filename != '':
@@ -328,7 +324,15 @@ def handle_universal_submission():
             encoded_file = base64.b64encode(file_bytes).decode('utf-8')
             file_name = uploaded_file.filename
 
-        # अत्यधिक प्रोफेशनल और प्रीमियम ईमेल डिज़ाइन (यूनिवर्सल)
+        # डायनेमिक एक्स्ट्रा फील्ड्स का HTML जनरेटर (कितने भी नए फील्ड्स जोड़ें, यहाँ अपने आप ढल जाएंगे)
+        extra_html = ""
+        if extra_fields:
+            extra_html += '<h3 style="color: #34495e; font-size: 15px; border-left: 4px solid #8e44ad; padding-left: 10px; margin-top: 20px; margin-bottom: 10px;">📋 अन्य विवरण (Additional Details)</h3><table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">'
+            for k, v in extra_fields.items():
+                extra_html += f'<tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>{k}:</strong></td><td style="padding: 8px;">{v}</td></tr>'
+            extra_html += '</table>'
+
+        # अत्यधिक प्रोफेशनल और क्लीन ईमेल डिज़ाइन (बिना किसी अंदरूनी लीक के)
         html_content = f"""
         <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
@@ -337,44 +341,39 @@ def handle_universal_submission():
                 <!-- Header -->
                 <div style="text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 20px; margin-bottom: 25px;">
                     <h2 style="color: #2c3e50; margin: 0; font-size: 24px; font-weight: 700;">🖨️ Apna Print Portal</h2>
-                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 14px;">Universal Request & Support Center</p>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">Official Notification System</p>
                 </div>
 
                 <!-- Badge -->
-                <div style="background: linear-gradient(135deg, #e8f8f5, #d1f2eb); padding: 15px; border-radius: 8px; font-size: 15px; color: #117a65; border: 1px solid #a3e4d7; text-align: center; margin-bottom: 25px;">
-                    <strong>Reference ID:</strong> <span style="color: #0e6251;">{identifier}</span> &nbsp;|&nbsp; <strong>Category:</strong> <span style="color: #0e6251;">{service_type}</span>
+                <div style="background: linear-gradient(135deg, #e8f8f5, #d1f2eb); padding: 12px; border-radius: 8px; font-size: 14px; color: #117a65; border: 1px solid #a3e4d7; text-align: center; margin-bottom: 20px;">
+                    <strong>Tracking ID:</strong> <span style="color: #0e6251;">{identifier}</span> &nbsp;|&nbsp; <strong>Source Form:</strong> <span style="color: #0e6251;">{form_source}</span>
                 </div>
 
                 <!-- Section: User Details -->
-                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #3498db; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">👤 यूजर विवरण (User Details)</h3>
+                <h3 style="color: #34495e; font-size: 15px; border-left: 4px solid #3498db; padding-left: 10px; margin-top: 20px; margin-bottom: 10px;">👤 यूजर विवरण (User Details)</h3>
                 <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
                     <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Username:</strong></td><td style="padding: 8px;">{username}</td></tr>
                     <tr><td style="padding: 8px;"><strong>Full Name:</strong></td><td style="padding: 8px;">{name}</td></tr>
                     <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Mobile:</strong></td><td style="padding: 8px;">{mobile}</td></tr>
-                    <tr><td style="padding: 8px;"><strong>Secondary Number:</strong></td><td style="padding: 8px;">{secondary_mobile}</td></tr>
+                    <tr><td style="padding: 8px;"><strong>Alt Mobile:</strong></td><td style="padding: 8px;">{secondary_mobile}</td></tr>
                     <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Email ID:</strong></td><td style="padding: 8px;">{user_email}</td></tr>
                 </table>
 
-                <!-- Section: Query / Request Details -->
-                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #e67e22; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📄 संदेश / शिकायत / विवरण (Query Details)</h3>
+                <!-- Section: Request / Query Details -->
+                <h3 style="color: #34495e; font-size: 15px; border-left: 4px solid #e67e22; padding-left: 10px; margin-top: 20px; margin-bottom: 10px;">📄 अनुरोध विवरण (Request Info)</h3>
                 <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
-                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Service/Type:</strong></td><td style="padding: 8px;"><span style="background: #e67e22; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">{service_type}</span></td></tr>
-                    <tr><td style="padding: 8px;"><strong>Query/Message:</strong></td><td style="padding: 8px; color: #2c3e50;">{query_text}</td></tr>
-                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Attached File:</strong></td><td style="padding: 8px; color: #2980b9; font-weight: bold;">{file_name}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Category/Service:</strong></td><td style="padding: 8px;"><span style="background: #e67e22; color: white; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">{service_type}</span></td></tr>
+                    <tr><td style="padding: 8px;"><strong>Message/Query:</strong></td><td style="padding: 8px; color: #2c3e50;">{query_text}</td></tr>
+                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>Attached Document:</strong></td><td style="padding: 8px; color: #2980b9; font-weight: bold;">{file_name}</td></tr>
                 </table>
 
-                <!-- Section: Complete Address (If provided) -->
-                <h3 style="color: #34495e; font-size: 16px; border-left: 4px solid #27ae60; padding-left: 10px; margin-top: 25px; margin-bottom: 15px;">📍 पता विवरण (Address Details)</h3>
-                <table style="width: 100%; font-size: 14px; color: #333333; border-collapse: collapse;">
-                    <tr style="background: #fdfefe;"><td style="padding: 8px; width: 35%;"><strong>Address:</strong></td><td style="padding: 8px;">{address}</td></tr>
-                    <tr><td style="padding: 8px;"><strong>City/Village:</strong></td><td style="padding: 8px;">{village_city}</td></tr>
-                    <tr style="background: #fdfefe;"><td style="padding: 8px;"><strong>PIN Code:</strong></td><td style="padding: 8px; font-weight: bold; color: #c0392b;">{pin_code}</td></tr>
-                    <tr><td style="padding: 8px;"><strong>District & State:</strong></td><td style="padding: 8px;">{district}, {state}</td></tr>
-                </table>
+                <!-- Dynamic Extra Fields -->
+                {extra_html}
 
-                <!-- Footer Note -->
-                <div style="margin-top: 30px; padding: 12px; background: #fef9e7; border-left: 4px solid #f1c40f; font-size: 13px; color: #7d6608; border-radius: 4px;">
-                    📎 <strong>नोट:</strong> यह संदेश Apna Print Portal के माध्यम से भेजा गया है। यदि कोई दस्तावेज संलग्न है, तो वह ओरिजिनल क्वालिटी में उपलब्ध है।
+                <!-- Footer Note & Copyright -->
+                <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ecf0f1; text-align: center; font-size: 12px; color: #95a5a6;">
+                    <p style="margin: 0 0 5px 0;">© 2026 Apna Print Portal. All Rights Reserved.</p>
+                    <p style="margin: 0;">यह एक ऑटोमेटेड सिक्योर नोटिफिकेशन मेल है।</p>
                 </div>
             </div>
         </body>
@@ -389,14 +388,14 @@ def handle_universal_submission():
             "Content-Type": "application/json"
         }
 
+        # यहाँ सब्जेक्ट को बिल्कुल साफ, प्रोफेशनल और सामान्य रखा गया है
         payload = {
             "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Print Portal"},
             "to": [{"email": target_email}],
-            "subject": f"📦 New [{service_type}] ID: {identifier} - {name}",
+            "subject": f"New Request from Apna Print Portal [{identifier}]",
             "htmlContent": html_content
         }
 
-        # यदि फाइल मौजूद है तो ही अटैचमेंट जोड़ें
         if encoded_file:
             payload["attachment"] = [
                 {
@@ -405,24 +404,22 @@ def handle_universal_submission():
                 }
             ]
 
-        # बैकग्राउंड थ्रेड ताकि रिस्पॉन्स सुपरफास्ट मिले
+        # बैकग्राउंड थ्रेड प्रोसेस
         email_thread = threading.Thread(
             target=send_order_email_background,
             args=(payload, headers, identifier, name, service_type)
         )
         email_thread.start()
 
-        log_event("SUCCESS", f"Request {identifier} ({service_type}) received from {name}")
         return jsonify({
             "status": "success", 
-            "message": f"सफलतापूर्वक सबमिट हो गया है! आईडी: {identifier}",
+            "message": f"सफलतापूर्वक सबमिट हो गया है! ट्रैकिंग आईडी: {identifier}",
             "order_id": identifier
         }), 200
 
     except Exception as e:
-        print(f"CRITICAL ERROR in Submission: {str(e)}")
+        print(f"CRITICAL ERROR: {str(e)}")
         return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
-
 
 @app.route('/health-check', methods=['GET'])
 def health_check(): return jsonify({"status": "alive"}), 200
