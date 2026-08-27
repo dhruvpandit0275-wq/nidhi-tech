@@ -270,40 +270,29 @@ def admin_reply():
             return jsonify({"status": "error", "message": "Failed to send email"}), 500
             
     return jsonify({"error": "Unauthorized"}), 403
-
-
-# Background Email Function (Sirf Document aur Identifier ke sath)
-def send_order_email_background(payload, headers, identifier):
-    try:
-        api_url = "https://api.brevo.com/v3/smtp/email"
-        response = requests.post(api_url, json=payload, headers=headers, timeout=25)
-        if response.status_code in [200, 201]:
-            print(f"SUCCESS: Document request {identifier} emailed successfully.")
-        else:
-            print(f"Brevo API Background Error: {response.text}")
-    except Exception as e:
-        print(f"Background Email Error: {str(e)}")
+ 
+# Email Upload Center 
 
 @app.route('/submit-support', methods=['POST'])
 @app.route('/submit-pvc-order', methods=['POST'])
 @app.route('/submit-universal-form', methods=['POST'])
 def handle_advanced_universal_submission():
     try:
-        # Unique ID generator (Sirf tracking ke liye)
+        # Unique ID generator for tracking
         identifier = f"DOC-{random.randint(100000, 999999)}"
         target_email = "contactsapnaportals@gmail.com"
         
-        # Sirf Document File Capture karna
+        # Capture uploaded document file
         uploaded_file = request.files.get('document')
 
         if not uploaded_file or uploaded_file.filename == '':
-            return jsonify({"status": "error", "message": "Kripya pehle document select karein!"}), 400
+            return jsonify({"status": "error", "message": "Please select a document first!"}), 400
 
         file_bytes = uploaded_file.read()
         encoded_file = base64.b64encode(file_bytes).decode('utf-8')
         file_name = uploaded_file.filename
 
-        # Clean aur Simple Email Design (Bina kisi user data ke)
+        # Clean and Simple Email HTML Design
         html_content = f"""
         <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
@@ -311,8 +300,8 @@ def handle_advanced_universal_submission():
                 
                 <!-- Header -->
                 <div style="text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 15px; margin-bottom: 20px;">
-                    <h2 style="color: #2c3e50; margin: 0; font-size: 22px; font-weight: 700;">Apna Nidhi Tech </h2>
-                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">New service reueste</p>
+                    <h2 style="color: #2c3e50; margin: 0; font-size: 22px; font-weight: 700;">Apna Nidhi Tech</h2>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">New Service Request</p>
                 </div>
 
                 <!-- Info Box -->
@@ -353,22 +342,29 @@ def handle_advanced_universal_submission():
                 }
             ]
 
-        # Background Thread Process
-        email_thread = threading.Thread(
-            target=send_order_email_background,
-            args=(payload, headers, identifier)
-        )
-        email_thread.start()
+        # Direct Synchronous Request (Mail sent immediately before returning response)
+        response = requests.post(api_url, json=payload, headers=headers, timeout=30)
 
-        return jsonify({
-            "status": "success", 
-            "message": f"Document successfully bhej diya gaya hai! ID: {identifier}",
-            "order_id": identifier
-        }), 200
+        if response.status_code in [200, 201]:
+            print(f"SUCCESS: Document request {identifier} emailed successfully.")
+            return jsonify({
+                "status": "success", 
+                "message": f"Document successfully sent! ID: {identifier}",
+                "order_id": identifier
+            }), 200
+        else:
+            print(f"Brevo API Error: {response.text}")
+            return jsonify({
+                "status": "error", 
+                "message": "Failed to send email via Brevo API. Please check API key."
+            }), 500
 
     except Exception as e:
         print(f"CRITICAL ERROR: {str(e)}")
-        return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
+        return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
         
 
 @app.route('/health-check', methods=['GET'])
