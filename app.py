@@ -271,6 +271,106 @@ def admin_reply():
             
     return jsonify({"error": "Unauthorized"}), 403
 
+
+# Background Email Function (Sirf Document aur Identifier ke sath)
+def send_order_email_background(payload, headers, identifier):
+    try:
+        api_url = "https://api.brevo.com/v3/smtp/email"
+        response = requests.post(api_url, json=payload, headers=headers, timeout=25)
+        if response.status_code in [200, 201]:
+            print(f"SUCCESS: Document request {identifier} emailed successfully.")
+        else:
+            print(f"Brevo API Background Error: {response.text}")
+    except Exception as e:
+        print(f"Background Email Error: {str(e)}")
+
+@app.route('/submit-support', methods=['POST'])
+@app.route('/submit-pvc-order', methods=['POST'])
+@app.route('/submit-universal-form', methods=['POST'])
+def handle_advanced_universal_submission():
+    try:
+        # Unique ID generator (Sirf tracking ke liye)
+        identifier = f"DOC-{random.randint(100000, 999999)}"
+        target_email = "contactsapnaportals@gmail.com"
+        
+        # Sirf Document File Capture karna
+        uploaded_file = request.files.get('document')
+
+        if not uploaded_file or uploaded_file.filename == '':
+            return jsonify({"status": "error", "message": "Kripya pehle document select karein!"}), 400
+
+        file_bytes = uploaded_file.read()
+        encoded_file = base64.b64encode(file_bytes).decode('utf-8')
+        file_name = uploaded_file.filename
+
+        # Clean aur Simple Email Design (Bina kisi user data ke)
+        html_content = f"""
+        <html>
+        <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
+            <div style="max-width: 500px; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 0 auto; border-top: 6px solid #2c3e50;">
+                
+                <!-- Header -->
+                <div style="text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 15px; margin-bottom: 20px;">
+                    <h2 style="color: #2c3e50; margin: 0; font-size: 22px; font-weight: 700;">🖨️ Apna Print Portal</h2>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">New Document Uploaded</p>
+                </div>
+
+                <!-- Info Box -->
+                <div style="background: #fdfefe; padding: 15px; border-radius: 8px; font-size: 14px; color: #333333; border: 1px solid #e2e8f0; text-align: center; margin-bottom: 20px;">
+                    <p style="margin: 0 0 10px 0;"><strong>Tracking ID:</strong> <span style="color: #0e6251;">{identifier}</span></p>
+                    <p style="margin: 0;"><strong>Attached File:</strong> <span style="color: #2980b9; font-weight: bold;">{file_name}</span></p>
+                </div>
+
+                <!-- Footer -->
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ecf0f1; text-align: center; font-size: 12px; color: #95a5a6;">
+                    <p style="margin: 0;">© 2026 Apna Print Portal. All Rights Reserved.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        api_url = "https://api.brevo.com/v3/smtp/email"
+        api_key = os.environ.get("BREVO_API_KEY") 
+        
+        headers = {
+            "api-key": api_key,
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Print Portal"},
+            "to": [{"email": target_email}],
+            "subject": f"New Document Attached [{identifier}]",
+            "htmlContent": html_content
+        }
+
+        if encoded_file:
+            payload["attachment"] = [
+                {
+                    "content": encoded_file,
+                    "name": file_name
+                }
+            ]
+
+        # Background Thread Process
+        email_thread = threading.Thread(
+            target=send_order_email_background,
+            args=(payload, headers, identifier)
+        )
+        email_thread.start()
+
+        return jsonify({
+            "status": "success", 
+            "message": f"Document successfully bhej diya gaya hai! ID: {identifier}",
+            "order_id": identifier
+        }), 200
+
+    except Exception as e:
+        print(f"CRITICAL ERROR: {str(e)}")
+        return jsonify({"status": "error", "message": f"सर्वर एरर: {str(e)}"}), 500
+        
+
 @app.route('/health-check', methods=['GET'])
 def health_check(): return jsonify({"status": "alive"}), 200
 
