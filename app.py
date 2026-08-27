@@ -280,7 +280,7 @@ def handle_advanced_universal_submission():
     try:
         # Unique ID generator for tracking
         identifier = f"DOC-{random.randint(100000, 999999)}"
-        target_email = "dhruvpandit0275@gmail.com"
+        target_email = "contactsapnaportals@gmail.com"
         
         # Capture uploaded document file
         uploaded_file = request.files.get('document')
