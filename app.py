@@ -311,8 +311,8 @@ def handle_advanced_universal_submission():
                 
                 <!-- Header -->
                 <div style="text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 15px; margin-bottom: 20px;">
-                    <h2 style="color: #2c3e50; margin: 0; font-size: 22px; font-weight: 700;">🖨️ Apna Print Portal</h2>
-                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">New Document Uploaded</p>
+                    <h2 style="color: #2c3e50; margin: 0; font-size: 22px; font-weight: 700;">Apna Nidhi Tech </h2>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">New service reueste</p>
                 </div>
 
                 <!-- Info Box -->
@@ -323,7 +323,7 @@ def handle_advanced_universal_submission():
 
                 <!-- Footer -->
                 <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #ecf0f1; text-align: center; font-size: 12px; color: #95a5a6;">
-                    <p style="margin: 0;">© 2026 Apna Print Portal. All Rights Reserved.</p>
+                    <p style="margin: 0;">© 2026 Apna Nidhi Tech / Sapna Portals. All Rights Reserved.</p>
                 </div>
             </div>
         </body>
