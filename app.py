@@ -339,7 +339,7 @@ def handle_advanced_universal_submission():
         }
 
         payload = {
-            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Print Portal"},
+            "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Nidhi Tech"},
             "to": [{"email": target_email}],
             "subject": f"New Document Attached [{identifier}]",
             "htmlContent": html_content
