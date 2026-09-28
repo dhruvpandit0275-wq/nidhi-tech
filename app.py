@@ -376,9 +376,6 @@ def handle_advanced_universal_submission():
         print(f"CRITICAL ERROR: {str(e)}")
         return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
 
 @app.route('/health-check', methods=['GET'])
 def health_check(): return jsonify({"status": "alive"}), 200
