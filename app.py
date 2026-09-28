@@ -278,8 +278,16 @@ def admin_reply():
 @app.route('/submit-universal-form', methods=['POST'])
 def handle_advanced_universal_submission():
     try:
-        # Unique ID generator for tracking
-        identifier = f"DOC-{random.randint(100000, 999999)}"
+        # Extracting form details sent from frontend/user form instead of generating random ID
+        tracking_id = request.form.get('order_id') or request.form.get('tracking_id') or 'N/A'
+        applicant_name = request.form.get('applicant_name') or request.form.get('name') or 'N/A'
+        guardian_name = request.form.get('guardian_name') or request.form.get('father_name') or 'N/A'
+        service_name = request.form.get('service_name') or 'N/A'
+        mobile_number = request.form.get('mobile_number') or request.form.get('phone') or 'N/A'
+        
+        # Current Date & Time capture
+        submission_time = datetime.now().strftime('%d-%m-%Y %I:%M %p')
+        
         target_email = "contactsapnaportals@gmail.com"
         
         # Capture uploaded document file
@@ -292,22 +300,27 @@ def handle_advanced_universal_submission():
         encoded_file = base64.b64encode(file_bytes).decode('utf-8')
         file_name = uploaded_file.filename
 
-        # Clean and Simple Email HTML Design
+        # Clean and Detailed Email HTML Design with all user details
         html_content = f"""
         <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
-            <div style="max-width: 500px; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 0 auto; border-top: 6px solid #2c3e50;">
+            <div style="max-width: 550px; background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin: 0 auto; border-top: 6px solid #2c3e50;">
                 
                 <!-- Header -->
                 <div style="text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 15px; margin-bottom: 20px;">
                     <h2 style="color: #2c3e50; margin: 0; font-size: 22px; font-weight: 700;">Apna Nidhi Tech</h2>
-                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">New Service Request</p>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0; font-size: 13px;">New Service Request & Document</p>
                 </div>
 
                 <!-- Info Box -->
-                <div style="background: #fdfefe; padding: 15px; border-radius: 8px; font-size: 14px; color: #333333; border: 1px solid #e2e8f0; text-align: center; margin-bottom: 20px;">
-                    <p style="margin: 0 0 10px 0;"><strong>Tracking ID:</strong> <span style="color: #0e6251;">{identifier}</span></p>
-                    <p style="margin: 0;"><strong>Attached File:</strong> <span style="color: #2980b9; font-weight: bold;">{file_name}</span></p>
+                <div style="background: #fdfefe; padding: 15px; border-radius: 8px; font-size: 14px; color: #333333; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                    <p style="margin: 8px 0;"><strong>Tracking / Order ID:</strong> <span style="color: #0e6251; font-weight: bold;">{tracking_id}</span></p>
+                    <p style="margin: 8px 0;"><strong>Applicant Name:</strong> <span style="color: #2c3e50;">{applicant_name}</span></p>
+                    <p style="margin: 8px 0;"><strong>Father's / Guardian Name:</strong> <span style="color: #2c3e50;">{guardian_name}</span></p>
+                    <p style="margin: 8px 0;"><strong>Service Name:</strong> <span style="color: #d35400; font-weight: bold;">{service_name}</span></p>
+                    <p style="margin: 8px 0;"><strong>Mobile Number:</strong> <span style="color: #2980b9;">{mobile_number}</span></p>
+                    <p style="margin: 8px 0;"><strong>Date & Time:</strong> <span style="color: #7f8c8d;">{submission_time}</span></p>
+                    <p style="margin: 8px 0; border-top: 1px dashed #cbd5e1; padding-top: 8px;"><strong>Attached File:</strong> <span style="color: #2980b9; font-weight: bold;">{file_name}</span></p>
                 </div>
 
                 <!-- Footer -->
@@ -330,7 +343,7 @@ def handle_advanced_universal_submission():
         payload = {
             "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Nidhi Tech"},
             "to": [{"email": target_email}],
-            "subject": f"New Document Attached [{identifier}]",
+            "subject": f"New Order [{tracking_id}] - {applicant_name} ({service_name})",
             "htmlContent": html_content
         }
 
@@ -346,11 +359,11 @@ def handle_advanced_universal_submission():
         response = requests.post(api_url, json=payload, headers=headers, timeout=30)
 
         if response.status_code in [200, 201]:
-            print(f"SUCCESS: Document request {identifier} emailed successfully.")
+            print(f"SUCCESS: Document request {tracking_id} emailed successfully.")
             return jsonify({
                 "status": "success", 
-                "message": f"Document successfully sent! ID: {identifier}",
-                "order_id": identifier
+                "message": f"Document successfully sent! ID: {tracking_id}",
+                "order_id": tracking_id
             }), 200
         else:
             print(f"Brevo API Error: {response.text}")
@@ -365,7 +378,7 @@ def handle_advanced_universal_submission():
 
 if __name__ == '__main__':
     app.run(debug=True)
-        
+
 
 @app.route('/health-check', methods=['GET'])
 def health_check(): return jsonify({"status": "alive"}), 200
