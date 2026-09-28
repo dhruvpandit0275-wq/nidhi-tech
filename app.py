@@ -300,7 +300,31 @@ def handle_advanced_universal_submission():
         encoded_file = base64.b64encode(file_bytes).decode('utf-8')
         file_name = uploaded_file.filename
 
-        # Clean and Detailed Email HTML Design with all user details
+        # Dynamic fields check: agar koi detail na ho ya N/A ho toh use mail me hide kar do
+        details_html = ""
+        
+        if tracking_id and tracking_id != 'N/A':
+            details_html += f'<p style="margin: 8px 0;"><strong>Tracking / Order ID:</strong> <span style="color: #0e6251; font-weight: bold;">{tracking_id}</span></p>'
+        
+        if applicant_name and applicant_name != 'N/A':
+            details_html += f'<p style="margin: 8px 0;"><strong>Applicant Name:</strong> <span style="color: #2c3e50;">{applicant_name}</span></p>'
+        
+        if guardian_name and guardian_name != 'N/A' and guardian_name.strip() != '':
+            details_html += f'<p style="margin: 8px 0;"><strong>Father\'s / Guardian Name:</strong> <span style="color: #2c3e50;">{guardian_name}</span></p>'
+        
+        if service_name and service_name != 'N/A':
+            details_html += f'<p style="margin: 8px 0;"><strong>Service Name:</strong> <span style="color: #d35400; font-weight: bold;">{service_name}</span></p>'
+        
+        if mobile_number and mobile_number != 'N/A':
+            details_html += f'<p style="margin: 8px 0;"><strong>Mobile Number:</strong> <span style="color: #2980b9;">{mobile_number}</span></p>'
+        
+        if submission_time:
+            details_html += f'<p style="margin: 8px 0;"><strong>Date & Time:</strong> <span style="color: #7f8c8d;">{submission_time}</span></p>'
+            
+        if file_name:
+            details_html += f'<p style="margin: 8px 0; border-top: 1px dashed #cbd5e1; padding-top: 8px;"><strong>Attached File:</strong> <span style="color: #2980b9; font-weight: bold;">{file_name}</span></p>'
+
+        # Clean and Detailed Email HTML Design with dynamic fields hiding logic
         html_content = f"""
         <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
@@ -314,13 +338,7 @@ def handle_advanced_universal_submission():
 
                 <!-- Info Box -->
                 <div style="background: #fdfefe; padding: 15px; border-radius: 8px; font-size: 14px; color: #333333; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-                    <p style="margin: 8px 0;"><strong>Tracking / Order ID:</strong> <span style="color: #0e6251; font-weight: bold;">{tracking_id}</span></p>
-                    <p style="margin: 8px 0;"><strong>Applicant Name:</strong> <span style="color: #2c3e50;">{applicant_name}</span></p>
-                    <p style="margin: 8px 0;"><strong>Father's / Guardian Name:</strong> <span style="color: #2c3e50;">{guardian_name}</span></p>
-                    <p style="margin: 8px 0;"><strong>Service Name:</strong> <span style="color: #d35400; font-weight: bold;">{service_name}</span></p>
-                    <p style="margin: 8px 0;"><strong>Mobile Number:</strong> <span style="color: #2980b9;">{mobile_number}</span></p>
-                    <p style="margin: 8px 0;"><strong>Date & Time:</strong> <span style="color: #7f8c8d;">{submission_time}</span></p>
-                    <p style="margin: 8px 0; border-top: 1px dashed #cbd5e1; padding-top: 8px;"><strong>Attached File:</strong> <span style="color: #2980b9; font-weight: bold;">{file_name}</span></p>
+                    {details_html}
                 </div>
 
                 <!-- Footer -->
