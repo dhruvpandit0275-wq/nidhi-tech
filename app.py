@@ -278,12 +278,11 @@ def admin_reply():
 @app.route('/submit-universal-form', methods=['POST'])
 def handle_advanced_universal_submission():
     try:
-        # Extracting form details sent from frontend/user form instead of generating random ID
+        # Extracting form details sent from frontend/user form
         tracking_id = request.form.get('order_id') or request.form.get('tracking_id') or 'N/A'
-        applicant_name = request.form.get('applicant_name') or request.form.get('name') or 'N/A'
-        guardian_name = request.form.get('guardian_name') or request.form.get('father_name') or 'N/A'
         service_name = request.form.get('service_name') or 'N/A'
-        mobile_number = request.form.get('mobile_number') or request.form.get('phone') or 'N/A'
+        agent_name = request.form.get('agent_name') or request.form.get('full_name') or 'N/A'
+        agent_mobile = request.form.get('mobile_number') or request.form.get('mobile') or request.form.get('phone') or 'N/A'
         
         # Current Date & Time capture
         submission_time = datetime.now().strftime('%d-%m-%Y %I:%M %p')
@@ -300,31 +299,28 @@ def handle_advanced_universal_submission():
         encoded_file = base64.b64encode(file_bytes).decode('utf-8')
         file_name = uploaded_file.filename
 
-        # Dynamic fields check: agar koi detail na ho ya N/A ho toh use mail me hide kar do
+        # Kewal wahi 5 options jo aapne bataye hain
         details_html = ""
-        
-        if tracking_id and tracking_id != 'N/A':
-            details_html += f'<p style="margin: 8px 0;"><strong>Tracking / Order ID:</strong> <span style="color: #0e6251; font-weight: bold;">{tracking_id}</span></p>'
-        
-        if applicant_name and applicant_name != 'N/A':
-            details_html += f'<p style="margin: 8px 0;"><strong>Applicant Name:</strong> <span style="color: #2c3e50;">{applicant_name}</span></p>'
-        
-        if guardian_name and guardian_name != 'N/A' and guardian_name.strip() != '':
-            details_html += f'<p style="margin: 8px 0;"><strong>Father\'s / Guardian Name:</strong> <span style="color: #2c3e50;">{guardian_name}</span></p>'
         
         if service_name and service_name != 'N/A':
             details_html += f'<p style="margin: 8px 0;"><strong>Service Name:</strong> <span style="color: #d35400; font-weight: bold;">{service_name}</span></p>'
-        
-        if mobile_number and mobile_number != 'N/A':
-            details_html += f'<p style="margin: 8px 0;"><strong>Mobile Number:</strong> <span style="color: #2980b9;">{mobile_number}</span></p>'
-        
+            
+        if tracking_id and tracking_id != 'N/A':
+            details_html += f'<p style="margin: 8px 0;"><strong>Order Number:</strong> <span style="color: #0e6251; font-weight: bold;">{tracking_id}</span></p>'
+            
         if submission_time:
             details_html += f'<p style="margin: 8px 0;"><strong>Date & Time:</strong> <span style="color: #7f8c8d;">{submission_time}</span></p>'
+            
+        if agent_mobile and agent_mobile != 'N/A':
+            details_html += f'<p style="margin: 8px 0;"><strong>Agent Mobile Number:</strong> <span style="color: #2980b9;">{agent_mobile}</span></p>'
+            
+        if agent_name and agent_name != 'N/A':
+            details_html += f'<p style="margin: 8px 0;"><strong>Agent Name:</strong> <span style="color: #2c3e50;">{agent_name}</span></p>'
             
         if file_name:
             details_html += f'<p style="margin: 8px 0; border-top: 1px dashed #cbd5e1; padding-top: 8px;"><strong>Attached File:</strong> <span style="color: #2980b9; font-weight: bold;">{file_name}</span></p>'
 
-        # Clean and Detailed Email HTML Design with dynamic fields hiding logic
+        # Clean and Detailed Email HTML Design
         html_content = f"""
         <html>
         <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px;">
@@ -361,7 +357,7 @@ def handle_advanced_universal_submission():
         payload = {
             "sender": {"email": "contactsapnaportals@gmail.com", "name": "Apna Nidhi Tech"},
             "to": [{"email": target_email}],
-            "subject": f"New Order [{tracking_id}] - {applicant_name} ({service_name})",
+            "subject": f"New Order [{tracking_id}] - {service_name}",
             "htmlContent": html_content
         }
 
@@ -393,6 +389,7 @@ def handle_advanced_universal_submission():
     except Exception as e:
         print(f"CRITICAL ERROR: {str(e)}")
         return jsonify({"status": "error", "message": f"Server Error: {str(e)}"}), 500
+
 
 
 @app.route('/health-check', methods=['GET'])
